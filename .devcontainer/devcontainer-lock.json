@@ -39,6 +39,11 @@
       "version": "1.5.0",
       "resolved": "ghcr.io/devcontainers/features/rust@sha256:0c55e65f2e3df736e478f26ee4d5ed41bae6b54dac1318c443e31444c8ed283c",
       "integrity": "sha256:0c55e65f2e3df736e478f26ee4d5ed41bae6b54dac1318c443e31444c8ed283c"
+    },
+    "ghcr.io/dhoeric/features/trivy:1.0.0": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/dhoeric/features/trivy@sha256:c291ec03dd2938d1c4bc6cf87e6afab8067514fb000c9165bcc66a6f65092783",
+      "integrity": "sha256:c291ec03dd2938d1c4bc6cf87e6afab8067514fb000c9165bcc66a6f65092783"
     }
   }
 }
