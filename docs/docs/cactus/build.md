@@ -1,6 +1,7 @@
-Hyperledger Cactus Build Instructions
-=====================================
+ 
 
+Hyperledger Cacti Build Instructions 
+ 
 This is the place to start if you want to give Cactus a spin on your local machine or if you are planning on contributing.
 
 > This is not a guide for `using` Cactus for your projects that have business logic but rather a guide for people who want to make changes to the code of Cactus. If you are just planning on using Cactus as an npm dependency for your project, then you might not need this guide at all.
