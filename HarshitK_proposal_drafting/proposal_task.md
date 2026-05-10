@@ -178,15 +178,7 @@ Identify possible problems and how you will handle them:
 4. **Check that your timeline is realistic** – add a buffer week for unexpected delays.
 
 ---
-
-## Step 5: Submit
-
-- Convert the proposal to **PDF** (unless the mentorship programme requires a different format).
-- Name the file: `YourName-Cacti-Mentorship-Proposal.pdf`.
-- Submit through the official portal (or email to mentors) as instructed.
-- Also post a link to your proposal in the `#cacti-mentorship` Discord channel (if exists) – it shows transparency.
-
----
+ 
 
 ## Appendix: Checklist of What Your Proposal Must Include
 

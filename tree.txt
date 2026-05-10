@@ -1,0 +1,1031 @@
+.
+├── BUILD.md
+├── cacti-demos
+│   ├── EVM
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── fabric-contracts
+│   │   └── counter-contract
+│   │       ├── chaincode-javascript
+│   │       │   └── package.json
+│   │       └── README.md
+│   ├── gateway
+│   │   ├── extensions
+│   │   │   └── carbon-credit
+│   │   │       └── README.md
+│   │   ├── oracle
+│   │   │   ├── case_1
+│   │   │   │   └── README.md
+│   │   │   ├── case_2
+│   │   │   │   └── README.md
+│   │   │   ├── case_3
+│   │   │   │   └── README.md
+│   │   │   ├── case_4
+│   │   │   │   └── README.md
+│   │   │   ├── case_5
+│   │   │   │   └── README.md
+│   │   │   ├── case_6
+│   │   │   │   └── README.md
+│   │   │   └── case_7
+│   │   │       └── README.md
+│   │   ├── README.md
+│   │   └── satp
+│   │       ├── case_1
+│   │       │   └── README.md
+│   │       ├── case_2
+│   │       │   └── README.md
+│   │       └── case_3
+│   │           └── README.md
+│   ├── HarshitK_proposal_drafting
+│   │   ├── cacti_architecture_overview.md
+│   │   ├── project_approach.md
+│   │   ├── Project_tasks.md
+│   │   ├── task1-cacti-clone-build-report.md.md
+│   │   └── task-2-running-satp-gateway.md
+│   ├── notes.md
+│   ├── overvire.md
+│   ├── README.md
+│   └── task_progress.md
+├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── examples
+│   ├── cactus-common-example-server
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-example-carbon-accounting-backend
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── src
+│   │       └── utility-emissions-channel
+│   │           └── typescript
+│   │               └── package.json
+│   ├── cactus-example-carbon-accounting-business-logic-plugin
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── src
+│   │       └── main
+│   │           └── kotlin
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── kotlin-client
+│   │                           └── README.md
+│   ├── cactus-example-carbon-accounting-frontend
+│   │   ├── CHANGELOG.md
+│   │   └── package.json
+│   ├── cactus-example-cbdc-bridging
+│   │   └── README.md
+│   ├── cactus-example-cbdc-bridging-backend
+│   │   ├── CHANGELOG.md
+│   │   ├── dist
+│   │   │   └── lib
+│   │   │       └── fabric-contracts
+│   │   │           ├── asset-reference
+│   │   │           │   └── typescript
+│   │   │           │       └── package.json
+│   │   │           └── cbdc-erc-20
+│   │   │               └── javascript
+│   │   │                   └── package.json
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── fabric-contracts
+│   │       │   ├── asset-reference
+│   │       │   │   └── typescript
+│   │       │   │       └── package.json
+│   │       │   └── cbdc-erc-20
+│   │       │       └── javascript
+│   │       │           └── package.json
+│   │       └── main
+│   │           └── typescript
+│   │               └── infrastructure
+│   │                   └── fabric-contracts
+│   │                       └── satp-contract
+│   │                           └── chaincode-typescript
+│   │                               └── package.json
+│   ├── cactus-example-cbdc-bridging-frontend
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-example-discounted-asset-trade
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-example-discounted-asset-trade-client
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-example-electricity-trade
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-example-supply-chain-backend
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-example-supply-chain-business-logic-plugin
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── src
+│   │       └── main
+│   │           └── kotlin
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── kotlin-client
+│   │                           └── README.md
+│   ├── cactus-example-supply-chain-frontend
+│   │   ├── CHANGELOG.md
+│   │   └── package.json
+│   ├── cactus-workshop-examples-2022-11-14
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── carbon-accounting
+│   │   └── README.md
+│   └── test-run-transaction
+│       ├── package.json
+│       ├── README.md
+│       └── supply-chain-app-stub
+│           └── package.json
+├── extensions
+│   ├── cactus-plugin-htlc-coordinator-besu
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   └── cactus-plugin-object-store-ipfs
+│       ├── CHANGELOG.md
+│       ├── package.json
+│       ├── README.md
+│       └── src
+│           └── main
+│               ├── go
+│               │   └── generated
+│               │       └── openapi
+│               │           └── go-client
+│               │               └── README.md
+│               └── kotlin
+│                   └── generated
+│                       └── openapi
+│                           └── kotlin-client
+│                               └── README.md
+├── FAQ.md
+├── GOVERNANCE.md
+├── HarshitK_proposal_drafting
+│   ├── cacti_architecture_overview.md
+│   ├── project_approach.md
+│   ├── Project_tasks.md
+│   ├── Proposal.md
+│   ├── proposal_task.md
+│   ├── task1-cacti-clone-build-report.md.md
+│   ├── task-2-running-satp-gateway.md
+│   └── tasks_progress.md
+├── MAINTAINERS.md
+├── notes.md
+├── package.json
+├── packages
+│   ├── cacti-copm-core
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── proto
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── README.md
+│   ├── cacti-copm-test
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cacti-ledger-browser
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cacti-plugin-consortium-static
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── kotlin
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── kotlin-client
+│   │                           └── README.md
+│   ├── cacti-plugin-copm-corda
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cacti-plugin-copm-fabric
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cacti-plugin-ledger-connector-stellar
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── test
+│   │           └── rust
+│   │               └── demo-contract
+│   │                   └── README.md
+│   ├── cacti-plugin-weaver-driver-fabric
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── readme.md
+│   ├── cactus-api-client
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-cmd-api-server
+│   │   ├── CHANGELOG.md
+│   │   ├── dist
+│   │   │   └── lib
+│   │   │       └── test
+│   │   │           └── resources
+│   │   │               └── cactus-dummy-package
+│   │   │                   └── package.json
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── main
+│   │       │   ├── go
+│   │       │   │   └── generated
+│   │       │   │       └── openapi
+│   │       │   │           └── go-client
+│   │       │   │               └── README.md
+│   │       │   ├── kotlin
+│   │       │   │   └── generated
+│   │       │   │       └── openapi
+│   │       │   │           └── kotlin-client
+│   │       │   │               └── README.md
+│   │       │   └── proto
+│   │       │       └── generated
+│   │       │           └── openapi
+│   │       │               └── README.md
+│   │       └── test
+│   │           └── resources
+│   │               └── cactus-dummy-package
+│   │                   └── package.json
+│   ├── cactus-common
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-core
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-core-api
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           ├── kotlin
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── kotlin-client
+│   │           │               └── README.md
+│   │           └── proto
+│   │               └── weaver
+│   │                   └── common
+│   │                       └── protos
+│   │                           └── README.md
+│   ├── cactus-plugin-bungee-hermes
+│   │   ├── CHANGELOG.md
+│   │   ├── dist
+│   │   │   └── lib
+│   │   │       └── test
+│   │   │           └── typescript
+│   │   │               └── fabric-contracts
+│   │   │                   ├── lock-asset
+│   │   │                   │   └── chaincode-typescript
+│   │   │                   │       └── package.json
+│   │   │                   └── simple-asset
+│   │   │                       └── chaincode-typescript
+│   │   │                           └── package.json
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── test
+│   │           └── typescript
+│   │               └── fabric-contracts
+│   │                   ├── lock-asset
+│   │                   │   └── chaincode-typescript
+│   │                   │       └── package.json
+│   │                   └── simple-asset
+│   │                       └── chaincode-typescript
+│   │                           └── package.json
+│   ├── cactus-plugin-consortium-manual
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           └── kotlin
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── kotlin-client
+│   │                           └── README.md
+│   ├── cactus-plugin-htlc-eth-besu
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   ├── cactus-plugin-htlc-eth-besu-erc20
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           └── kotlin
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── kotlin-client
+│   │                           └── README.md
+│   ├── cactus-plugin-keychain-aws-sm
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           └── kotlin
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── kotlin-client
+│   │                           └── README.md
+│   ├── cactus-plugin-keychain-azure-kv
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           └── kotlin
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── kotlin-client
+│   │                           └── README.md
+│   ├── cactus-plugin-keychain-google-sm
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           └── kotlin
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── kotlin-client
+│   │                           └── README.md
+│   ├── cactus-plugin-keychain-memory
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           ├── kotlin
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── kotlin-client
+│   │           │               └── README.md
+│   │           └── proto
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── README.md
+│   ├── cactus-plugin-keychain-memory-wasm
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           ├── kotlin
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── kotlin-client
+│   │           │               └── README.md
+│   │           └── rust
+│   │               ├── cactus-plugin-keychain-memory-wasm
+│   │               │   └── README.md
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── rust-server
+│   │                           └── README.md
+│   ├── cactus-plugin-keychain-vault
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── cactus-keychain-vault-server
+│   │       │   └── README.md
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           └── kotlin
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── kotlin-client
+│   │                           └── README.md
+│   ├── cactus-plugin-ledger-connector-aries
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   ├── cactus-plugin-ledger-connector-besu
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           ├── go
+│   │           │   └── generated
+│   │           │       └── openapi
+│   │           │           └── go-client
+│   │           │               └── README.md
+│   │           └── proto
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── README.md
+│   ├── cactus-plugin-ledger-connector-cdl
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   ├── cactus-plugin-ledger-connector-corda
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── main
+│   │       │   ├── go
+│   │       │   │   └── generated
+│   │       │   │       └── openapi
+│   │       │   │           └── go-client
+│   │       │   │               └── README.md
+│   │       │   └── kotlin
+│   │       │       └── generated
+│   │       │           └── openapi
+│   │       │               └── kotlin-client
+│   │       │                   └── README.md
+│   │       └── main-server
+│   │           └── kotlin
+│   │               └── gen
+│   │                   └── kotlin-spring
+│   │                       └── README.md
+│   ├── cactus-plugin-ledger-connector-ethereum
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   ├── cactus-plugin-ledger-connector-fabric
+│   │   ├── CHANGELOG.md
+│   │   ├── dist
+│   │   │   └── lib
+│   │   │       └── test
+│   │   │           └── typescript
+│   │   │               └── fixtures
+│   │   │                   └── go
+│   │   │                       ├── basic-asset-transfer
+│   │   │                       │   ├── chaincode-javascript
+│   │   │                       │   │   └── package.json
+│   │   │                       │   └── chaincode-typescript
+│   │   │                       │       └── package.json
+│   │   │                       └── lock-asset
+│   │   │                           └── chaincode-typescript
+│   │   │                               └── package.json
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── main
+│   │       │   ├── go
+│   │       │   │   └── generated
+│   │       │   │       └── openapi
+│   │       │   │           └── go-client
+│   │       │   │               └── README.md
+│   │       │   └── kotlin
+│   │       │       └── generated
+│   │       │           └── openapi
+│   │       │               └── kotlin-client
+│   │       │                   └── README.md
+│   │       └── test
+│   │           └── typescript
+│   │               └── fixtures
+│   │                   └── go
+│   │                       ├── asset-transfer-private-data
+│   │                       │   └── chaincode-go
+│   │                       │       └── README.md
+│   │                       ├── basic-asset-transfer
+│   │                       │   ├── chaincode-javascript
+│   │                       │   │   └── package.json
+│   │                       │   └── chaincode-typescript
+│   │                       │       └── package.json
+│   │                       └── lock-asset
+│   │                           └── chaincode-typescript
+│   │                               └── package.json
+│   ├── cactus-plugin-ledger-connector-iroha2
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   ├── cactus-plugin-ledger-connector-polkadot
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── main
+│   │       │   └── go
+│   │       │       └── generated
+│   │       │           └── openapi
+│   │       │               └── go-client
+│   │       │                   └── README.md
+│   │       └── test
+│   │           └── rust
+│   │               └── ink
+│   │                   └── README.md
+│   ├── cactus-plugin-ledger-connector-sawtooth
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   ├── cactus-plugin-ledger-connector-xdai
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   ├── cactus-plugin-persistence-ethereum
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   ├── cactus-plugin-persistence-fabric
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       └── main
+│   │           └── go
+│   │               └── generated
+│   │                   └── openapi
+│   │                       └── go-client
+│   │                           └── README.md
+│   ├── cactus-plugin-satp-hermes
+│   │   ├── ARCHITECTURE.md
+│   │   ├── CHANGELOG.md
+│   │   ├── CHANGELOG_SATP.md
+│   │   ├── CONTRIBUTING.md
+│   │   ├── dist
+│   │   │   └── lib
+│   │   │       └── test
+│   │   │           └── typescript
+│   │   │               └── fabric
+│   │   │                   └── contracts
+│   │   │                       ├── oracle-bl-contract
+│   │   │                       │   └── chaincode-typescript
+│   │   │                       │       └── package.json
+│   │   │                       └── satp-contract
+│   │   │                           └── chaincode-typescript
+│   │   │                               └── package.json
+│   │   ├── grafana
+│   │   │   └── README.md
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── examples
+│   │       │   ├── adapter-demo
+│   │       │   │   └── docker-adapter-testing.md
+│   │       │   └── config
+│   │       │       └── README.md
+│   │       ├── main
+│   │       │   └── typescript
+│   │       │       └── cross-chain-mechanisms
+│   │       │           └── bridge
+│   │       │               └── fabric-contracts
+│   │       │                   └── satp-wrapper
+│   │       │                       └── chaincode-typescript
+│   │       │                           └── package.json
+│   │       └── test
+│   │           └── typescript
+│   │               └── fabric
+│   │                   └── contracts
+│   │                       ├── oracle-bl-contract
+│   │                       │   └── chaincode-typescript
+│   │                       │       └── package.json
+│   │                       └── satp-contract
+│   │                           └── chaincode-typescript
+│   │                               └── package.json
+│   ├── cactus-test-api-client
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-test-cmd-api-server
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-test-geth-ledger
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-test-plugin-consortium-manual
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-test-plugin-htlc-eth-besu
+│   │   ├── CHANGELOG.md
+│   │   └── package.json
+│   ├── cactus-test-plugin-htlc-eth-besu-erc20
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-test-plugin-keychain-memory
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-test-plugin-ledger-connector-besu
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-test-plugin-ledger-connector-ethereum
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-test-tooling
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── cactus-test-verifier-client
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json
+│   │   └── README.md
+│   └── cactus-verifier-client
+│       ├── CHANGELOG.md
+│       ├── package.json
+│       └── README.md
+├── PULL_REQUEST_TEMPLATE.md
+├── README-cactus.md
+├── README.md
+├── RELEASE_MANAGEMENT.md
+├── ROADMAP.md
+├── SECURITY.md
+├── some_example_repos
+│   ├── cacti_onboarding_research
+│   │   ├── 00_synthesis.md
+│   │   ├── 01_hyperledger_fabric.md
+│   │   ├── 02_kubernetes.md
+│   │   ├── 03_kubernetes_community.md
+│   │   ├── 04_vscode.md
+│   │   ├── 05_rust_lang.md
+│   │   ├── 06_freecodecamp.md
+│   │   ├── 07_grimoirelab.md
+│   │   ├── 08_credo_ts.md
+│   │   ├── 09_cacti_current_state.md
+│   │   ├── 10_hiero.md
+│   │   ├── cacti_maintainer_expectations.md
+│   │   ├── cacti_workflow_research
+│   │   │   ├── wf_00_synthesis.md
+│   │   │   ├── wf_01_hyperledger_fabric.md
+│   │   │   ├── wf_02_kubernetes.md
+│   │   │   ├── wf_03_vscode.md
+│   │   │   ├── wf_04_rust.md
+│   │   │   ├── wf_05_freecodecamp.md
+│   │   │   ├── wf_06_grimoirelab.md
+│   │   │   ├── wf_07_credo_ts.md
+│   │   │   └── wf_08_cacti.md
+│   │   ├── progress.md
+│   │   └── research_logs.md
+│   └── tasks.md
+├── weaver
+│   ├── CODE_OF_CONDUCT.md
+│   ├── common
+│   │   ├── policy-dsl
+│   │   │   ├── package.json
+│   │   │   └── readme.md
+│   │   ├── protos
+│   │   │   └── README.md
+│   │   ├── protos-go
+│   │   │   └── README.md
+│   │   ├── protos-java-kt
+│   │   │   └── README.md
+│   │   ├── protos-js
+│   │   │   ├── CHANGELOG.md
+│   │   │   ├── package.json
+│   │   │   └── README.md
+│   │   ├── protos-rs
+│   │   │   ├── pkg
+│   │   │   │   └── README.md
+│   │   │   └── README.md
+│   │   └── README.md
+│   ├── core
+│   │   ├── drivers
+│   │   │   ├── corda-driver
+│   │   │   │   └── README.md
+│   │   │   ├── fabric-driver
+│   │   │   │   ├── CHANGELOG.md
+│   │   │   │   ├── package.json
+│   │   │   │   └── readme.md
+│   │   │   └── README.md
+│   │   ├── identity-management
+│   │   │   ├── iin
+│   │   │   │   └── README.md
+│   │   │   ├── iin-agent
+│   │   │   │   ├── CHANGELOG.md
+│   │   │   │   ├── package.json
+│   │   │   │   ├── README.md
+│   │   │   │   └── src
+│   │   │   │       ├── protocols
+│   │   │   │       │   └── README.md
+│   │   │   │       └── README.md
+│   │   │   ├── README.md
+│   │   │   └── trust-anchor
+│   │   │       └── README.md
+│   │   ├── network
+│   │   │   ├── besu
+│   │   │   │   └── README.md
+│   │   │   ├── corda-interop-app
+│   │   │   │   └── README.md
+│   │   │   ├── fabric-interop-cc
+│   │   │   │   ├── contracts
+│   │   │   │   │   └── interop
+│   │   │   │   │       └── README.md
+│   │   │   │   ├── interfaces
+│   │   │   │   │   └── asset-mgmt
+│   │   │   │   │       └── README.md
+│   │   │   │   ├── libs
+│   │   │   │   │   ├── assetexchange
+│   │   │   │   │   │   └── README.md
+│   │   │   │   │   └── utils
+│   │   │   │   │       └── README.md
+│   │   │   │   └── README.md
+│   │   │   └── README.md
+│   │   ├── README.md
+│   │   └── relay
+│   │       ├── architecture.md
+│   │       ├── credentials
+│   │       │   ├── docker
+│   │       │   │   └── README.md
+│   │       │   └── README.md
+│   │       ├── driver
+│   │       │   └── readme.md
+│   │       ├── README.md
+│   │       ├── relay-config.md
+│   │       └── relay-docker.md
+│   ├── OVERVIEW.md
+│   ├── README.md
+│   ├── rfcs
+│   │   ├── ABNF-definitions.md
+│   │   ├── formats
+│   │   │   ├── assets
+│   │   │   │   ├── exchange.md
+│   │   │   │   ├── satp.md
+│   │   │   │   └── transfer.md
+│   │   │   ├── communication
+│   │   │   │   └── relay.md
+│   │   │   ├── network
+│   │   │   │   ├── application-sdk.md
+│   │   │   │   ├── besu-interop-contract.md
+│   │   │   │   ├── corda-network-schema.md
+│   │   │   │   ├── fabric-interop-chaincode.md
+│   │   │   │   ├── identity.md
+│   │   │   │   ├── iin_method.md
+│   │   │   │   ├── interop-cordapp.md
+│   │   │   │   └── membership.md
+│   │   │   ├── policies
+│   │   │   │   ├── access-control.md
+│   │   │   │   ├── dsl.md
+│   │   │   │   └── proof-verification.md
+│   │   │   ├── README.md
+│   │   │   └── views
+│   │   │       ├── addressing.md
+│   │   │       ├── besu.md
+│   │   │       ├── corda.md
+│   │   │       ├── definition.md
+│   │   │       ├── ethereum.md
+│   │   │       ├── fabric.md
+│   │   │       └── request-response.md
+│   │   ├── models
+│   │   │   ├── identity
+│   │   │   │   ├── design-choices.md
+│   │   │   │   ├── identity-update-policy.md
+│   │   │   │   ├── iin-agent.md
+│   │   │   │   ├── iin.md
+│   │   │   │   ├── iin-steward-agent.md
+│   │   │   │   └── network-identity-management.md
+│   │   │   ├── infrastructure
+│   │   │   │   ├── interoperation-modules.md
+│   │   │   │   ├── relay_satp.md
+│   │   │   │   └── relays.md
+│   │   │   ├── ledger
+│   │   │   │   ├── atomic-cross-ledger-transactions.md
+│   │   │   │   ├── cross-ledger-operations.md
+│   │   │   │   ├── cryptographic-proofs.md
+│   │   │   │   ├── events.md
+│   │   │   │   ├── observation-of-state.md
+│   │   │   │   └── views.md
+│   │   │   ├── README.md
+│   │   │   └── security
+│   │   │       ├── confidentiality-design-choices.md
+│   │   │       ├── confidentiality.md
+│   │   │       └── security-domains.md
+│   │   ├── protocols
+│   │   │   ├── asset-exchange
+│   │   │   │   ├── besu-htlc.md
+│   │   │   │   ├── corda-htlc-alternatives.md
+│   │   │   │   ├── corda-htlc.md
+│   │   │   │   ├── fabric-htlc.md
+│   │   │   │   └── generic-htlc.md
+│   │   │   ├── asset-transfer
+│   │   │   │   ├── corda.md
+│   │   │   │   ├── fabric.md
+│   │   │   │   └── generic.md
+│   │   │   ├── contract-invocation
+│   │   │   │   └── invocation.md
+│   │   │   ├── data-sharing
+│   │   │   │   ├── besu.md
+│   │   │   │   ├── corda.md
+│   │   │   │   ├── fabric.md
+│   │   │   │   └── generic.md
+│   │   │   ├── discovery
+│   │   │   │   ├── discovery.md
+│   │   │   │   └── negotiation.md
+│   │   │   ├── events
+│   │   │   │   └── event-bus.md
+│   │   │   ├── identity
+│   │   │   │   ├── id-config-sharing.md
+│   │   │   │   ├── identity-syncing.md
+│   │   │   │   ├── membership-syncing.md
+│   │   │   │   └── security-domain-identity-validation.md
+│   │   │   ├── README.md
+│   │   │   ├── satp
+│   │   │   │   └── asset-transfer
+│   │   │   │       ├── corda.md
+│   │   │   │       ├── fabric.md
+│   │   │   │       └── generic.md
+│   │   │   └── template-protocol.md
+│   │   ├── README.md
+│   │   └── terminology.md
+│   ├── samples
+│   │   ├── besu
+│   │   │   ├── besu-cli
+│   │   │   │   ├── CHANGELOG.md
+│   │   │   │   ├── package.json
+│   │   │   │   └── readme.md
+│   │   │   ├── simpleasset
+│   │   │   │   ├── CHANGELOG.md
+│   │   │   │   ├── package.json
+│   │   │   │   └── README.md
+│   │   │   └── simplestate
+│   │   │       ├── CHANGELOG.md
+│   │   │       ├── package.json
+│   │   │       └── README.md
+│   │   ├── corda
+│   │   │   ├── corda-simple-application
+│   │   │   │   ├── clients
+│   │   │   │   │   └── README.md
+│   │   │   │   └── README.md
+│   │   │   └── fungible-house-token
+│   │   │       └── README.md
+│   │   ├── fabric
+│   │   │   ├── fabric-cli
+│   │   │   │   ├── CHANGELOG.md
+│   │   │   │   ├── package.json
+│   │   │   │   └── readme.md
+│   │   │   ├── simplestate
+│   │   │   │   └── README.md
+│   │   │   └── simplestatewithacl
+│   │   │       └── README.md
+│   │   └── README.md
+│   ├── sdks
+│   │   ├── besu
+│   │   │   └── node
+│   │   │       ├── CHANGELOG.md
+│   │   │       ├── package.json
+│   │   │       └── README.md
+│   │   ├── corda
+│   │   │   └── README.md
+│   │   ├── fabric
+│   │   │   ├── go-sdk
+│   │   │   │   └── readme.md
+│   │   │   ├── interoperation-node-sdk
+│   │   │   │   ├── CHANGELOG.md
+│   │   │   │   ├── package.json
+│   │   │   │   └── README.md
+│   │   │   └── README.md
+│   │   └── README.md
+│   ├── SECURITY.md
+│   └── tests
+│       ├── network-setups
+│       │   ├── besu
+│       │   │   ├── package.json
+│       │   │   └── README.md
+│       │   ├── corda
+│       │   │   ├── README.md
+│       │   │   └── shared
+│       │   │       └── artifacts
+│       │   │           └── README.md
+│       │   ├── fabric
+│       │   │   ├── dev
+│       │   │   │   └── README.md
+│       │   │   └── shared
+│       │   │       └── README.md
+│       │   ├── indy
+│       │   │   └── README.md
+│       │   └── README.md
+│       └── README.md
+└── whitepaper
+    └── whitepaper.md
+
+537 directories, 492 files

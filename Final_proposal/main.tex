@@ -1,0 +1,132 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{left=1.5cm, right=1.5cm, top=2.5cm, bottom=2cm}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{fancyhdr} 
+\usepackage{eso-pic}
+\usepackage[most]{tcolorbox}
+\usepackage{amssymb}
+      % <-- REQUIRED for full-width background
+
+% Colors
+\definecolor{primary}{RGB}{0, 51, 102}
+\definecolor{secondary}{RGB}{14, 156, 126}
+\definecolor{lightgrayblue}{RGB}{230, 240, 250}   % <-- for background
+\definecolor{codebg}{RGB}{245, 248, 250}
+% Section styling (primary for headings)
+\titleformat{\section}
+{\normalfont\Large\bfseries\color{primary}}
+{\thesection}{1em}{}
+\titleformat{\subsection}
+{\normalfont\large\bfseries\color{primary}}
+{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+{\normalfont\normalsize\bfseries\color{primary}}
+{\thesubsubsection}{1em}{}
+
+% Page style
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\textcolor{secondary}{\thepage}}
+\renewcommand{\headrulewidth}{0pt}
+
+% Code listings style
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    captionpos=b,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    keywordstyle=\color{primary},
+    commentstyle=\color{secondary},
+    tabsize=2
+}
+
+\lstdefinelanguage{javascript}{
+  keywords={const, let, var, if, else, return, async, await, export, interface, Promise, new, throw, typeof},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]'
+}
+
+\lstdefinelanguage{json}{
+  basicstyle=\ttfamily\small,
+  showstringspaces=false,
+  breaklines=true,
+  morestring=[b]",
+  stringstyle=\color{orange},
+  literate=
+   *{0}{{{\color{primary}0}}}{1}
+    {1}{{{\color{primary}1}}}{1}
+    {2}{{{\color{primary}2}}}{1}
+    {3}{{{\color{primary}3}}}{1}
+    {4}{{{\color{primary}4}}}{1}
+    {5}{{{\color{primary}5}}}{1}
+    {6}{{{\color{primary}6}}}{1}
+    {7}{{{\color{primary}7}}}{1}
+    {8}{{{\color{primary}8}}}{1}
+    {9}{{{\color{primary}9}}}{1}
+    {:}{{{\color{black}{:}}}}{1}
+    {,}{{{\color{black}{,}}}}{1}
+    {\{}{{{\color{black}{\{}}}}{1}
+    {\}}{{{\color{black}{\}}}}}{1}
+    {[}{{{\color{black}{[}}}}{1}
+    {]}{{{\color{black}{]}}}}{1}
+}
+
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null},
+  sensitive=false,
+  comment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]'
+}
+
+\lstdefinelanguage{bash}{
+  keywords={if, then, else, fi, for, in, do, done, function, echo, exit},
+  sensitive=true,
+  comment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]'
+}
+
+% Hyperlinks
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    urlcolor=secondary
+}
+
+% Paragraph spacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.8em}
+
+\begin{document}
+
+% ==================== COVER LETTER PAGE ====================
+\input{cover-letter}
+\newpage
+
+% ==================== TECHNICAL PROPOSAL PAGE(S) ====================
+\input{proposal-content}
+
+\end{document}

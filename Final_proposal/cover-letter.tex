@@ -1,0 +1,40 @@
+\input{personal-info}
+
+% Reduce top margin
+\vspace*{-1.5cm}
+
+% Add full-width shaded background banner ONLY on this page
+\AddToShipoutPictureBG*{%
+    \color{lightgrayblue}
+    \AtPageUpperLeft{\rule[-1.7in]{\paperwidth}{1.7in}}
+}
+
+% Header (centered, big name, links below)
+\coverletterheader
+
+\vspace{0.8cm}
+
+% Cover letter title (BELOW background, bigger text)
+\begin{center}
+    {\color{primary}\LARGE \textbf{Cover Letter: \projecttitle}}
+\end{center}
+
+\vspace{0.5cm}
+
+% Salutation (BELOW background, bigger text)
+{\color{primary}\large \textbf{To:}} \committee \\
+{\color{secondary}\large \textbf{Mentors:}} \mentors \\
+{\color{primary}\large \textbf{Date:}} May 2026
+
+\vspace{0.8cm}
+
+It is evident that Hyperledger Fabric-X presents a significant evolution in tokenized asset management on the blockchain, extending the capabilities of traditional Hyperledger Fabric with its modular architecture and enhanced privacy features. However, effectively deploying and managing these Fabric-X networks still poses a non-trivial challenge, often requiring extensive manual configuration and specialized tooling. The current Fablo framework excels at simplifying classic Fabric deployments through intuitive JSON configurations and automated Docker Compose generation, yet extending this seamless experience to Fabric-X requires careful consideration of its distinct multi-component architecture. The challenge lies in harmonizing Fablo's declarative simplicity with Fabric-X's inherent complexities, such as its three-stage crypto pipeline, multiple topology modes (e.g., `xdev` versus `decomposed`), and granular microservice configurations.
+
+Integrating Fabric-X into Fablo is not merely about adding a new set of Docker containers; it necessitates a deep understanding of how to abstract Fabric-X’s unique identity management, FSC node identities, and Token SDK namespace generation into a flexible, configurable model. The current `fablo-repo` architecture, while robust for classic Fabric, needs strategic extensions to accommodate Fabric-X’s specific requirements without compromising backward compatibility. This involves developing a dedicated Fabric-X generator within Fablo that can dynamically synthesize crypto material using `cryptogen` and `fxconfig`, manage orderer and committer microservice configurations, and support varied deployment topologies. The objective is to transition Fabric-X setup from a manual, sample-dependent process to a fully automated, configurable one, addressing issues like dynamic crypto generation, scalable orderer identity management, and support for complex, decomposed network topologies.
+
+My technical background and hands-on experience are directly aligned with the demands of this integration project. Over the past two years, I have gained substantial experience in distributed systems, Docker-based tooling, TypeScript/Node.js development, and robust CI/CD workflows through numerous open-source contributions. My work on blockchain projects, such as the decentralized article-publishing platform AuthrNet, has provided me with a strong familiarity with token-style and permissioned workflows that mirror Fabric-X's namespace-based model. Crucially, I have already invested significant time in studying both Fablo’s architecture and the Fabric-X token sample end-to-end, leading to the development of a working MVP. This proof-of-concept, hosted at `https://github.com/HarK-github/FabloFabricxIntegration`, demonstrates a `global.platform: "fabricx"` generator branching and functional `fablo init --fabricx`, `fablo status`, and `fablo down` commands for a bundled Fabric-X network. This proactive engagement underscores my readiness to tackle the intricacies of this project.
+
+I am particularly eager to collaborate with and learn from experienced mentors such as Umegbewe 'Great' Nwebedu, Osama Rabea, and Jakub Dzikowski. Their profound expertise in Hyperledger technologies and open-source development will be invaluable as I navigate the complexities of this integration, ensuring that the solutions developed are not only functional but also adhere to best practices and community standards. My commitment extends beyond merely implementing features; I am dedicated to delivering a robust, well-tested, and fully documented Fabric-X integration into Fablo that truly simplifies its adoption for developers worldwide. I am confident that my blend of foundational knowledge, direct project experience, and passion for open-source innovation makes me an ideal candidate to bring this critical integration to fruition.
+
+% ==================== ANSWERS TO QUESTIONS ====================
+\input{letter-answers}

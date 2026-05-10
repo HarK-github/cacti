@@ -1,0 +1,49 @@
+% ============================================
+% PERSONAL INFORMATION - SINGLE SOURCE OF TRUTH
+% ============================================
+
+% Basic Info
+\newcommand{\myname}{Harshit Kandpal}
+\newcommand{\myemail}{kandpalhar@gmail.com}
+\newcommand{\mygithub}{HarK-github}
+\newcommand{\mylinkedin}{harshit-k-a746a1310}
+\newcommand{\myphone}{+91 9321763273}
+\newcommand{\mylocation}{Durg, India (IST/UTC+5:30)}
+\newcommand{\mydegree}{B.Tech Computer Science, IIT Bhilai (2024–2028)}
+
+% Project Info
+\newcommand{\projecttitle}{Hyperledger Fabric-X + Fablo Integration}
+\newcommand{\program}{OpenSSF LFX Mentorship 2026}
+\newcommand{\mentors}{Umegbewe 'Great' Nwebedu, Osama Rabea, and Jakub Dzikowski}
+\newcommand{\committee}{OpenSSF Mentorship Program Committee}
+
+% Links
+\newcommand{\githuburl}{https://github.com/\mygithub}
+\newcommand{\linkedinurl}{https://www.linkedin.com/in/\mylinkedin}
+
+% ============================================
+% COMMANDS FOR DISPLAYING INFO (consistent styling)
+% ============================================
+
+% Header with icons (small version for sincerity section)
+\newcommand{\personalinfoinline}{%
+    {\color{secondary}\small \texttt{\myemail}} \quad
+    {\color{primary}\small\textbullet} \quad
+    {\color{primary}\small \href{\githuburl}{\color{primary}\mygithub}} \quad
+    {\color{secondary}\small\textbullet} \quad
+    {\color{secondary}\small \href{\linkedinurl}{\color{secondary}\mylinkedin}} \quad
+    {\color{primary}\small\textbullet} \quad
+    {\color{primary}\small \texttt{\myphone}} \quad
+    {\color{secondary}\small\textbullet} \quad
+    {\color{secondary}\small \texttt{\mylocation}}
+}
+
+% Full header with big name (for cover letter top)
+\newcommand{\coverletterheader}{%
+    \begin{center}
+        {\color{primary}\fontsize{28}{0}\selectfont \textbf{\myname}}
+        \vspace{0.2cm}
+
+        \personalinfoinline
+    \end{center}
+}
