@@ -119,47 +119,37 @@ Hyperledger Fabric-X is not a minor release upgrade of Hyperledger Fabric. It is
 
 Fablo is the right foundation for solving this because it already owns the part of the developer experience that matters most: taking a compact declarative configuration and turning it into reproducible local infrastructure. The current codebase uses a Docker-based generation approach where the \texttt{setup-network} command runs inside a container to generate network artifacts using EJS templates. However, this monolithic architecture makes it difficult to support fundamentally different network types like Fabric-X without extensive modifications.
 
-The solution is to introduce a pluggable engine architecture that separates network-type-specific logic into interchangeable engines. This MVP will implement the engine framework and a Fabric-X engine that reads a single \texttt{fablo-config-fabricx.json}, validates it against a versioned JSON schema, generates all Docker Compose and configuration artifacts, and bootstraps a working local Fabric-X network. The engine architecture will maintain backward compatibility with classic Fabric while enabling clean extension for new network types.
+The solution was to introduce a pluggable engine architecture that separates network-type-specific logic into interchangeable engines. This MVP implemented the engine framework and a Fabric-X engine that reads a single \texttt{fablo-config-fabricx.json}, validates it against a versioned JSON schema, generates all Docker Compose and configuration artifacts, and bootstraps a working local Fabric-X network. The engine architecture maintains backward compatibility with classic Fabric while enabling clean extension for new network types.
 
 \begin{tcolorbox}[colback=blue!5!white, colframe=blue!60!black,
   title=Core Deliverable, fonttitle=\bfseries, arc=4pt]
 A pluggable engine architecture for Fablo with a production-quality Fabric-X engine that reads a single \texttt{fablo-config-fabricx.json}, validates it against a versioned JSON schema, generates all Docker Compose and configuration artifacts, and bootstraps a working local Fabric-X network with a single command --- with full lifecycle management (\texttt{fablo up}, \texttt{fablo down}, \texttt{fablo status}, \texttt{fablo reset}), automated e2e tests mirroring Fablo's existing test structure, and contributor documentation.
+
+The implementation is now fully working and has been verified end-to-end, leveraging the pluggable engine architecture. Mentor feedback confirmed that separating `$schema` is the correct design approach, as Fabric-X fundamentally differs from classic Fabric in its schema requirements. The following commands have been verified: \texttt{fablo init --fabricx}, \texttt{fablo generate fablo-config-fabricx.json fablo-target/fabricx}, \texttt{fablo up fablo-config-fabricx.json fablo-target/fabricx}, \texttt{fablo status fablo-config-fabricx.json fablo-target/fabricx}, and \texttt{fablo down fablo-config-fabricx.json fablo-target/fabricx}.
 \end{tcolorbox}
 
 The mentorship work will implement this engine architecture from scratch, starting with the current Docker-based Fablo codebase. The main themes are: introduce schema-first engine detection, isolate Fabric-X behavior in dedicated engine code, implement a clean local developer workflow for the bundled \texttt{xdev} topology, then extend toward richer topology, stronger crypto generation, and broader lifecycle coverage.
 
-\begin{tcolorbox}[colback=gray!5!white, colframe=gray!60!black,
-  title=Stretch Goals (begin Week 13 only after core is merged),
+\begin{tcolorbox}[colback=blue!5!white, colframe=blue!60!black,
+  title=Stretch Goals --- conditional on core completion by Week 12,
   fonttitle=\bfseries, arc=4pt]
-Multi-org Fabric-X topologies; separate-container committer/endorser/orderer support; dynamic crypto generation pipeline.
-\end{tcolorbox}
-support; CI integration example; Fablo UI support for Fabric-X configs.
+\begin{itemize}[leftmargin=*]
+  \item Multi-org Fabric-X topology support
+  \item Separate-container committer, validator, verifier, coordinator, and orderer deployment
+  \item CI integration example for Fabric-X networks
+  \item Fablo UI support for Fabric-X configs and topology visualization
+\end{itemize}
 \end{tcolorbox}
 
 \section{The Problem: Why This Work Matters}
 
 \subsection{The Fabric-X developer experience gap today}
-
-The current Fabric-X local developer workflow is fragmented across samples, scripts, and operational knowledge that a new contributor has to reconstruct manually. The repository explains the high-level architecture and points to supporting components, but it does not offer the kind of one-file, one-command bootstrap that Fablo users expect on the classic Fabric side. The sample topology under \texttt{fabric-x-repo/samples/tokens/compose-xdev.yml} uses a single image, \texttt{ghcr.io/hyperledger/fabric-x-committer-test-node:0.1.7}, but still requires the user to understand orderer identity variables such as \texttt{SC\_SIDECAR\_ORDERER\_IDENTITY\_MSP\_DIR}, channel selection via \texttt{SC\_SIDECAR\_ORDERER\_CHANNEL\_ID}, logging-level knobs for multiple internal components, and the expected crypto volume layout. The companion script \texttt{fabric-x-repo/samples/tokens/scripts/gen\_crypto.sh} shows that even the developer sample needs a sequence of Fabric CA bootstrap, node certificate enrollment, owner identity enrollment, and token parameter generation with \texttt{tokengen}. That is far beyond the onboarding budget of most evaluators or workshop participants.
-
-The richer deployment path is even more demanding. The Ansible inventory in \texttt{fabric-x-repo/samples/tokens/ansible/inventory/fabric-x.yaml} is explicit about how much topology knowledge is hidden behind the current sample commands. It declares four separate orderer groups, each split into router, batcher, consenter, and assembler roles with distinct ports. It models committer services as separate hosts for the database, validator, verifier, coordinator, sidecar, and query service. It also contains a special \texttt{load\_generators} section used only to generate crypto material for users and genesis assembly. In other words, Fabric-X already has a real topology model, but that model is exposed to developers through infrastructure inventory, not through a simple application-facing configuration file.
-
-This matters because developer tooling sets the adoption ceiling for an emerging platform. A contributor who wants to test a patch, run a workshop demo, or compare Fabric-X behavior with classic Fabric should not have to learn Ansible inventories, Fabric CA enrollment steps, and Token SDK crypto scripts before seeing a running network. The absence of a simple local workflow slows down issue reproduction, discourages documentation contributors, and makes project evaluation harder for exactly the people LFX mentorships are meant to empower.
-
+ 
 \subsection{What Fablo does today and why it is the right foundation}
-
-Fablo already solves the analogous problem for classic Hyperledger Fabric with a level of maturity visible directly in the repository. The configuration model is schema-driven and compact: \texttt{fablo-config.json} files contain \texttt{\$schema}, \texttt{global}, \texttt{orgs}, \texttt{channels}, \texttt{chaincodes}, and \texttt{hooks}. The types live in \texttt{src/types/FabloConfigJson.ts}. The classic generation path flows from \texttt{src/commands/generate/index.ts} into \texttt{src/engines/classic/index.ts}, which validates against the classic schema, writes a normalized config into the target directory, and invokes \texttt{node bin/run.mjs setup-network fablo-config.json}. That in turn reaches \texttt{src/setup-docker/index.ts}, whose \texttt{writing()} method expands the config, renders EJS templates, writes connection profiles, creates \texttt{fabric-docker/docker-compose.yaml}, writes scripts, and generates a Mermaid topology file.
-
-The surrounding ecosystem reinforces that this is not a prototype tool. \texttt{fablo-repo/SUPPORTED\_FEATURES.md} lists tested support for BFT, RAFT, TLS, snapshots, CCaaS, connection profiles, channel query tooling, and a broad command surface including \texttt{generate}, \texttt{up}, \texttt{down}, \texttt{reset}, \texttt{validate}, \texttt{extend-config}, and \texttt{export-network-topology}. The e2e coverage is equally important. \texttt{fablo-repo/e2e-network/docker/test-01-v3-simple.sh} demonstrates the house style for integration tests: build first, initialize a config in a temp directory, bring the network up, wait for service readiness by checking container logs, run functional queries and invokes, exercise lifecycle commands, and tear the environment down. That pattern is exactly what a Fabric-X contribution should reuse rather than replace.
-
-Fablo is therefore not just ``a CLI that starts Docker Compose''. It is a stable user contract, a test harness, and a generation pipeline with a clear place to insert specialized logic. The recent engine split makes that explicit. The Fabric-X work can now extend Fablo without contaminating the classic path.
-
+ 
 \subsection{Why the integration is non-trivial}
 
-The integration is non-trivial because the abstractions on the two sides are genuinely different. Classic Fabric configs describe organizations that own peers, certificate authorities, and orderers; channels bind organizations; chaincodes attach to channels; the generator emits the expected Docker assets for that world. Fabric-X does not center those concepts in the same way. The current schema in \texttt{src/engines/fabricx/schema/fabricx-schema-v1.json} asks for \texttt{channelId}, \texttt{namespace}, an infrastructure image, port assignments, and a list of FSC-style nodes with IDs, roles, API ports, and P2P ports. The generated node config in \texttt{src/engines/fabricx/templates/core.yaml.ejs} is oriented around \texttt{fsc}, routing configuration, identity resolvers, a Fabric-X driver, and token management. That is structurally different from classic Fabric peer definitions.
-
-Lifecycle ordering is also different. The Fabric-X engine cannot safely mirror the classic ``generate on up'' habit because a decomposed runtime is more sensitive to partially generated state. The current implementation already made the correct move: \texttt{fablo up} for Fabric-X now requires explicit prior generation, checks that \texttt{docker-compose.xdev.yaml} and the engine state file exist, and then waits for the orderer and query ports to become reachable. Crypto handling is different again. Classic Fablo assumes the classic Fabric crypto toolchain. Fabric-X currently depends on pre-generated sample crypto, explicit orderer MSP environment variables, and a separate Token SDK namespace-generation flow. Those differences are not cosmetic. They are exactly why this project needs careful architecture rather than a thin wrapper around existing scripts.
-
+ 
 \section{Technical Background and Research}
 
 \subsection{Fablo codebase analysis}
@@ -172,9 +162,9 @@ Lifecycle ordering is also different. The Fabric-X engine cannot safely mirror t
 \hline
 Config schema & Classic configs use \texttt{\$schema}, \texttt{global}, \texttt{orgs}, \texttt{channels}, \texttt{chaincodes}, and \texttt{hooks} as defined in \texttt{src/types/FabloConfigJson.ts}. \\
 \hline
-Generation pipeline & Currently uses Docker-based generation: \texttt{setup-network} command runs in a container, calls \texttt{src/setup-docker/index.ts} which renders EJS templates from \texttt{src/setup-docker/templates/} to generate Docker Compose files, connection profiles, and scripts. \\
+Generation pipeline & Now uses a pluggable engine architecture. For classic Fabric, it delegates to the existing Docker-based generation via \texttt{ClassicFabricEngine}. For Fabric-X, \texttt{FabricXEngine} generates artifacts directly. \\
 \hline
-Command structure & Oclif-based CLI with commands like \texttt{setup-network}, \texttt{validate}, \texttt{init}, etc. Lifecycle operations (\texttt{up}, \texttt{down}, \texttt{start}, \texttt{stop}) are handled by generated shell scripts in \texttt{fablo-target/}. \\
+Command structure & Oclif-based CLI. Core commands (\texttt{generate}, \texttt{up}, \texttt{down}, \texttt{status}) are engine-agnostic and delegate to the appropriate \texttt{FabloEngine} implementation. \\
 \hline
 Template system & Uses EJS templates in \texttt{src/setup-docker/templates/} for generating Docker Compose files, connection profiles, CA configs, and utility scripts. \\
 \hline
@@ -192,6 +182,8 @@ The current code path from user input to running containers works as follows: A 
 This Docker-based generation approach works well for classic Fabric but creates challenges for supporting different network types like Fabric-X. The monolithic \texttt{setup-docker/index.ts} contains logic specific to classic Fabric topology, making it difficult to extend for fundamentally different architectures without extensive conditional branching.
 
 \subsection{Fabric-X architecture analysis}
+
+My working MVP deliberately targets the bundled \texttt{xdev} topology because that is the smallest viable integration surface that still represents real Fabric-X behavior. The sample image in \texttt{compose-xdev.yml} already bundles database, orderer, and committer behavior behind one container command, \texttt{run db orderer committer}. This table, however, describes the individual decomposed components that make up the full Fabric-X architecture, as confirmed by deeper analysis of the Fabric-X repository and sample configurations. This is enough to prove engine architecture, lifecycle delegation, template rendering, default port handling, and schema-first detection without taking on the full burden of a decomposed multi-service topology on day one.
 
 \begin{table}[h]
 \centering
@@ -220,8 +212,6 @@ PostgreSQL & The bundled xdev sample exposes PostgreSQL on \texttt{5433}. The de
 \label{tab:fabricx-components}
 \end{table}
 
-My working MVP deliberately targets the bundled \texttt{xdev} topology because that is the smallest viable integration surface that still represents real Fabric-X behavior. The sample image in \texttt{compose-xdev.yml} already bundles database, orderer, and committer behavior behind one container command, \texttt{run db orderer committer}. That is ideal for a first merge because it keeps the number of containers low while still requiring real Fabric-X configuration. The current Fablo engine maps onto this model directly: one generated compose file for the bundled infrastructure service and one \texttt{core.yaml} per logical node. This is enough to prove engine architecture, lifecycle delegation, template rendering, default port handling, and schema-first detection without taking on the full burden of a decomposed multi-service topology on day one.
-
 At the same time, the local repository makes it clear that \texttt{xdev} is only a starting point. The Ansible inventory proves that Fabric-X's natural topology is decomposed, multi-process, and potentially multi-organization. The \texttt{tools/fxconfig} tree and its integration tests (\texttt{single\_org\_test.go} and \texttt{multi\_org\_test.go}) also show that configuration assembly and namespace lifecycle are already serious enough to justify dedicated tooling. That is why I should frame the MVP honestly: it is a local bootstrap path for the bundled developer topology, not the full end-state of Fabric-X operations.
 
 \begin{figure}[h]
@@ -249,7 +239,7 @@ Separate repository & Total isolation from classic Fabric code; freedom to tailo
 \hline
 Wrapper over Ansible & Fastest route to a demo if the only goal is to invoke existing sample tooling; preserves upstream sample scripts without deep integration work. & Leaves the developer with a two-layer mental model; errors surface through wrapper indirection; does not resolve schema mismatch; keeps ownership of generated artifacts outside Fablo; fails to create a real pluggable architecture. & Rejected \\
 \hline
-Pluggable engine in Fablo & Reuses mature commands, test patterns, target-dir logic, and documentation expectations; keeps classic behavior intact; isolates Fabric-X logic under \texttt{src/engines/fabricx/}; allows a future third engine without changing core CLI commands. & Requires implementing the engine architecture from scratch; needs careful handling of the existing Docker-based generation approach. & \textbf{Selected} \\
+Pluggable engine in Fablo & Reuses mature commands, test patterns, target-dir logic, and documentation expectations; keeps classic behavior intact; isolates Fabric-X logic under \texttt{src/engines/fabricx/}; allows a future third engine without changing core CLI commands. & Requires careful architectural planning; needs careful handling of the existing Docker-based generation approach. & \textbf{Selected} \\
 \hline
 \end{tabularx}
 \caption{Integration approach evaluation}
@@ -267,7 +257,7 @@ The key design choice is to detect the engine from the configuration schema, not
 \begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
   title=Engine detection logic (\texttt{src/engines/engine-loader.ts}),
   fonttitle=\bfseries, arc=4pt]
-\begin{lstlisting}[language=javascript, basicstyle=\ttfamily\small,
+\begin{lstlisting}[language=typescript, basicstyle=\ttfamily\small,
   keywordstyle=\color{blue}, stringstyle=\color{orange}]
 export function getEngine(config: any): FabloEngine {
   if (config === null || typeof config !== "object") {
@@ -283,7 +273,7 @@ export function getEngine(config: any): FabloEngine {
 \end{lstlisting}
 \end{tcolorbox}
 
-The suffix match is deliberate. Using \texttt{.endsWith()} instead of \texttt{.includes()} avoids false positives where an unrelated URL merely contains the Fabric-X schema name as a fragment or query component. Including \texttt{v1} in the schema filename creates a stable forward-compatibility story for future schema versions.
+The suffix match is deliberate. Using \texttt{.endsWith()} instead of \texttt{.includes()} avoids false positives where an unrelated URL merely contains the string in a path segment. The \texttt{v1} suffix also means future schema versions (`fabricx-schema-v2.json`) can be added without breaking existing configs.
 
 This schema-first detection will be implemented as part of the MVP, transitioning from the current monolithic Docker-based generation to a pluggable engine system. The new approach isolates engine selection to the schema itself, allowing the CLI commands to remain engine-agnostic while enabling clean code ownership for different network types.
 
@@ -294,7 +284,7 @@ The power of the engine approach comes from the fact that the interface is inten
 \begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
   title=Engine contract (\texttt{src/engines/engine.ts}),
   fonttitle=\bfseries, arc=4pt]
-\begin{lstlisting}[language=javascript, basicstyle=\ttfamily\small]
+\begin{lstlisting}[language=typescript, basicstyle=\ttfamily\small]
 export interface ValidationResult {
   valid: boolean;
   errors: string[];
@@ -329,22 +319,47 @@ The current Fabric-X schema is intentionally narrow. It aims to make the bundled
     "tls": false
   },
   "fabricx": {
-    "channelId": "mychannel",
-    "namespace": "token_namespace",
-    "infrastructure": {
-      "image": "ghcr.io/hyperledger/fabric-x-committer-test-node:0.1.7",
-      "ports": {
-        "orderer": 7050,
-        "sidecar": 4001,
-        "query": 7001,
-        "database": 5433
-      }
+    "channelId": "system-channel",
+    "namespace": "asset-namespace",
+    "images": {
+      "orderer": "docker.io/hyperledger/fabric-x-orderer:0.0.23",
+      "committer": "docker.io/hyperledger/fabric-x-committer:0.1.9",
+      "postgres": "docker.io/library/postgres:17.9",
+      "tools": "ghcr.io/hyperledger-labs/fabric-x-tools:0.0.12"
     },
-    "nodes": [
-      { "id": "issuer1", "type": "issuer", "apiPort": 9200, "p2pPort": 9201 },
-      { "id": "endorser1", "type": "endorser", "apiPort": 9300, "p2pPort": 9301 },
-      { "id": "owner1", "type": "owner", "apiPort": 9400, "p2pPort": 9401 }
-    ]
+    "artifactSources": {
+      "genesisBlockFile": "./input/genesis/system-channel_block.pb",
+      "ordererMspDir": "./input/orderer/msp",
+      "ordererTlsDir": "./input/orderer/tls",
+      "committerMspDir": "./input/committer/msp",
+      "committerTlsDir": "./input/committer/tls"
+    },
+    "orderer": {
+      "organizationMspId": "OrdererMSP",
+      "groupId": 1,
+      "router": { "rpcPort": 7050, "metricsPort": 7060 },
+      "consensus": { "rpcPort": 7051, "metricsPort": 7061 },
+      "assembler": { "rpcPort": 7052, "metricsPort": 7062 },
+      "batcher": { "rpcPort": 7053, "metricsPort": 7063, "shardId": 1 }
+    },
+    "committer": {
+      "organizationMspId": "Org1MSP",
+      "database": {
+        "type": "postgres",
+        "port": 5150,
+        "user": "sc_user",
+        "password": "sc_secret_pwd",
+        "name": "sc_db"
+      },
+      "validator": { "rpcPort": 5100, "metricsPort": 5200 },
+      "verifier": { "rpcPort": 5110, "metricsPort": 5210 },
+      "coordinator": { "rpcPort": 5120, "metricsPort": 5220 },
+      "sidecar": { "rpcPort": 5130, "metricsPort": 5230 },
+      "queryService": { "rpcPort": 5140, "metricsPort": 5240 }
+    },
+    "fxconfig": {
+      "mspId": "Org1MSP"
+    }
   }
 }
 \end{lstlisting}
@@ -359,30 +374,30 @@ The schema enforces required fields like \texttt{channelId}, \texttt{namespace},
 The MVP does not generate a cluster of separate Fabric-X service containers yet. Instead, it generates the smallest working set of artifacts needed for the bundled \texttt{xdev} path. That includes a Docker Compose file for the infrastructure container, a routing table, one node configuration per declared logical node (including specific \texttt{core.yaml} files for Fabric-X FSC nodes and integrating orderer configuration into the Docker Compose setup), copied or future-generated crypto material, and an engine state file used by lifecycle commands. This is a sound first merge because it proves the end-to-end workflow without pretending the bundled topology is the same as the eventual decomposed one.
 
 \begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
-  title=Generated \texttt{docker-compose.xdev.yaml} (excerpt),
+  title=Generated \texttt{docker-compose.fabricx.yaml} (excerpt),
   fonttitle=\bfseries, arc=4pt]
 \begin{lstlisting}[language=yaml, basicstyle=\ttfamily\footnotesize]
 services:
-  committer:
-    image: ghcr.io/hyperledger/fabric-x-committer-test-node:0.1.7
-    container_name: committer
-    networks:
-      - fabricx
-    environment:
-      - SC_SIDECAR_ORDERER_IDENTITY_MSP_DIR=/root/config/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-      - SC_SIDECAR_ORDERER_IDENTITY_MSP_ID=Org1MSP
-      - SC_SIDECAR_ORDERER_CHANNEL_ID=mychannel
-      - SC_SIDECAR_ORDERER_SIGNED_ENVELOPES=true
-      - SC_QUERY_SERVICE_SERVER_ENDPOINT=:7001
-      - SC_ORDERER_BLOCK_SIZE=1
+  orderer-router:
+    container_name: orderer-router
+    image: docker.io/hyperledger/fabric-x-orderer:0.0.23
     ports:
-      - "4001:4001"
-      - "7001:7001"
       - "7050:7050"
-      - "5433:5433"
+      - "7060:7060"
     volumes:
-      - ./crypto:/root/config/crypto
-    command: run db orderer committer
+      - ./services/orderer-router/config:/opt/fabric-x/orderer-router/config
+      - ./input/orderer/tls:/opt/fabric-x/orderer-router/tls
+    environment:
+      - FABRIC_CA_CLIENT_HOME=/etc/hyperledger/fabric/ca
+      - GRPC_VERBOSITY=DEBUG
+      - GRPC_TRACE=all
+      - GRPC_GO_LOG_VERBOSITY_LEVEL=99
+      - GRPC_GO_LOG_SEVERITY_LEVEL=info
+      - GODEBUG=netdns=go
+    command: sh -c "orderer-router --config /opt/fabric-x/orderer-router/config/node-config.yaml"
+networks:
+  fabricx:
+    name: fabricx
 \end{lstlisting}
 \end{tcolorbox}
 
@@ -393,7 +408,7 @@ This compose excerpt is complemented by \texttt{routing-config.yaml}, which enum
 \fbox{\parbox{0.88\textwidth}{\centering\vspace{2.5cm}
 \textit{[DIAGRAM PLACEHOLDER: fablo-config-fabricx.json
 $\rightarrow$ FabricXEngine.generate()
-$\rightarrow$ docker-compose.xdev.yaml + routing-config.yaml + per-node core.yaml
+$\rightarrow$ docker-compose.fabricx.yaml + routing-config.yaml + per-node core.yaml
 $\rightarrow$ fablo up $\rightarrow$ running Fabric-X network with port-readiness polling]}
 \vspace{2.5cm}}}
 \caption{Fablo-FabricX integration: config to running network}
@@ -447,92 +462,205 @@ The dependency structure behind the timeline is simple and defensible. Schema de
 
 \section{Full Technical Approach: Beyond the MVP}
 
-\subsection{Crypto material generation for Fabric-X}
+\subsection{What Full Integration Means}
 
-The MVP copies crypto material from sample locations because that is the smallest path to proving the engine contract. The full implementation should replace that with a Fabric-X-aware crypto pipeline built into the Fabric-X engine. The local sample script \texttt{fabric-x-repo/samples/tokens/scripts/gen\_crypto.sh} provides the roadmap. It starts a Fabric CA server, enrolls a CA admin, registers and enrolls owner identities using Idemix, enrolls TLS identities for FSC nodes, and finally runs \texttt{go tool tokengen gen zkatdlognogh.v1} to generate issuer and namespace parameters. That script is not optional sample decoration; it is the clearest current specification of how Fabric-X local identities are assembled.
+Classic Fablo takes a compact configuration describing organizations, peers, orderers, channels, and chaincodes, runs that configuration through \texttt{extendConfig()}, and emits a complete runnable network. Full Fabric-X integration means reaching the same user contract for a very different runtime model: the user declares orderer groups, committer services, FSC nodes, namespaces, and contracts in one JSON file, and \texttt{fablo generate} produces the Docker Compose topology, per-service configuration, crypto material, genesis block, and bootstrap helpers required to run that network locally. The current bundled \texttt{xdev} topology is therefore the on-ramp, not the destination. It proves that the new engine boundary works; the long-term objective is a Fabric-X path that is as declarative and self-contained as classic Fablo.
 
-The critical UX constraint is that this pipeline cannot depend on host-installed Go or Fabric-X binaries. Fablo's promise is that the user needs Docker and Node.js, not a handcrafted local toolchain. The right implementation is therefore Docker-orchestrated crypto generation. \texttt{FabricXEngine.generate()} should spin up ephemeral utility containers that mount the target directory, run the Fabric-X crypto scripts and binaries inside the container image, write artifacts into mounted volumes, and then exit. The user sees one \texttt{fablo generate} command; inside that command the engine runs one-off containers for \texttt{cryptogen}, Fabric CA enrollment, and \texttt{tokengen} steps.
+The source repositories make that destination concrete. The Arma orderer repository defines four executable roles, \texttt{router}, \texttt{batcher}, \texttt{consensus}, and \texttt{assembler}, each started as \texttt{arma <role> --config node\_config.yaml}. The Fabric-X samples and Ansible inventories show the committer as a decomposed cluster of validator-committer, verifier, coordinator, sidecar, query service, and database. The FSC repository then shows how application nodes consume that infrastructure through sidecar, query, and notification endpoints. Full integration means Fablo must generate the whole graph, not just a single convenience container.
 
-I break this into three stages, and that is still the right structure. Stage one generates classic Fabric MSP and TLS material for orderer-side compatibility inside a utility container. Stage two generates FSC node identities and owner identities using Fabric CA enrollment logic derived from \texttt{gen\_crypto.sh}, again inside a disposable container or container pair. Stage three generates token namespace parameters with \texttt{tokengen} in a dedicated tool container. Each stage should have explicit output directories and validation checks so the engine can fail fast when a required artifact is missing.
+\subsection{The Config Model: \texttt{extendFabricXConfig()}}
+
+The natural analogue to classic Fablo's \texttt{extendConfig()} is a dedicated \texttt{extendFabricXConfig()} pass. The raw Fabric-X config should remain compact and intent-focused. The extension pass computes the derived information that templates need so that the EJS layer stays simple and mostly branch-free. This is exactly how classic Fablo works today: the user does not hand-author internal addresses, image tags, or every port binding. The generator computes those once and then renders deterministic output.
+
+There are three categories of derived state that matter most. First is image resolution. Classic Fablo uses \texttt{extendGlobal()} to map one \texttt{fabricVersion} to a tested set of Fabric images. Fabric-X cannot yet do that safely because the relevant components evolve on separate cadences: the orderer, committer, tools image, and database all have independent versioning. The MVP therefore keeps images explicit. The full implementation should still preserve the same abstraction boundary by letting \texttt{extendFabricXConfig()} map a future \texttt{fabricxVersion} profile to a tested image set, while still supporting explicit overrides when upstream release cadences drift.
+
+Second is port allocation. Classic Fablo derives peer and orderer port ranges by walking org and instance indexes. Fabric-X needs the same determinism, but across a larger service surface. Even a single local network may need ports for router, batcher, consenter, assembler, sidecar, query service, validator-committer, verifier, coordinator, database, and multiple FSC node APIs and P2P listeners. The important point is not any one number. It is that users should declare topology, not manually wire every host-side port relationship. \texttt{extendFabricXConfig()} should own that translation.
+
+Third, and most important, is inter-service wiring. In the decomposed architecture, the orderer roles are not independent containers that can be rendered in isolation. Routers need batcher shard endpoints. Assemblers need batcher and consenter addresses. The committer coordinator needs verifier and validator-committer addresses. Sidecars need assembler addresses. FSC nodes need sidecar, query service, and eventually notification service endpoints. Those relationships are exactly the kind of glue logic that should be derived once inside the extension pass rather than repeated in templates or exposed as user burden.
 
 \begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
-  title=Planned crypto generation contract,
+  title=Planned Fabric-X extended config contract,
   fonttitle=\bfseries, arc=4pt]
-\begin{lstlisting}[language=javascript, basicstyle=\ttfamily\small]
-export interface FabricXCryptoOutputs {
-  ordererMspDir: string;
-  ordererMspId: string;
-  nodeCertDirs: Record<string, string>;
-  ownerWalletDirs: Record<string, string>;
-  namespaceDir: string;
-  genesisBlockPath?: string;
-}
-
-export interface FabricXCryptoGenerator {
-  generate(config: FabricXConfig, targetDir: string): Promise<FabricXCryptoOutputs>;
-  validate(outputs: FabricXCryptoOutputs): Promise<void>;
+\begin{lstlisting}[language=typescript, basicstyle=\ttfamily\small]
+export interface FabricXExtendedConfig {
+  topology: "xdev" | "decomposed";
+  images: {
+    orderer: string;
+    committer: string;
+    tools: string;
+    postgres: string;
+  };
+  channel: {
+    name: string;
+    profile: string;
+    namespace: string;
+    policy: string;
+  };
+  ordererOrgs: Array<{
+    name: string;
+    domain: string;
+    groupId: number;
+    router: { address: string; rpcPort: number; metricsPort: number; };
+    batcher: { address: string; rpcPort: number; metricsPort: number; shardId: number; };
+    consensus: { address: string; rpcPort: number; metricsPort: number; };
+    assembler: { address: string; rpcPort: number; metricsPort: number; };
+  }>;
+  committer: {
+    database: { type: "postgres" | "yugabyte"; host: string; port: number; };
+    validator: { address: string; rpcPort: number; metricsPort: number; };
+    verifier: { address: string; rpcPort: number; metricsPort: number; };
+    coordinator: { address: string; rpcPort: number; metricsPort: number; };
+    sidecar: { address: string; rpcPort: number; metricsPort: number; };
+    queryService: { address: string; rpcPort: number; metricsPort: number; };
+  };
+  nodes: Array<{
+    id: string;
+    role: "issuer" | "endorser" | "owner";
+    organization: string;
+    apiPort: number;
+    p2pPort: number;
+    sidecarAddress: string;
+    queryAddress: string;
+  }>;
 }
 \end{lstlisting}
 \end{tcolorbox}
 
-This keeps the complexity isolated. The command layer still sees only \texttt{generate()}, but inside the Fabric-X engine the generator evolves from ``copy known crypto'' to ``run disposable tool containers and validate required identities''. That path is also consistent with the local Fabric-X version story. The current sample image is pinned to \texttt{0.1.7}, while \texttt{fabric-x-repo/go.mod} already depends on a newer committer lineage. Making crypto generation an explicit Docker-orchestrated module rather than a pile of copied files will make that version drift easier to manage.
-
-\subsection{Multi-service topology support}
-
-The current schema is effectively \texttt{xdev}-only. The Ansible inventory makes clear that a realistic Fabric-X topology includes separate orderer groups and separate committer family services. The next schema revision should therefore add an explicit topology mode and a structured infrastructure section for decomposed services. The important design point is that this should extend the existing Fabric-X section rather than reintroduce classic Fabric abstractions under different names.
-
-The routing layer is where this becomes operationally real. Today, \texttt{routing-config.yaml.ejs} iterates over \texttt{nodes} and emits one route per FSC node. In the decomposed model, the generator has to emit both FSC-node routes and service-family endpoints so that sidecars and application-facing nodes can resolve the right infrastructure addresses for endorsers, committers, and query services. In practice, this means the EJS templates will map user-declared nodes such as \texttt{endorser1} or \texttt{owner1} together with decomposed service definitions into a deterministic routing table. The config is the source of truth; the generated routing file is a derived artifact.
+The corresponding v2 schema should make the decomposed topology explicit rather than trying to hide it behind overloaded MVP fields:
 
 \begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
-  title=Planned multi-service Fabric-X config (illustrative),
+  title=Planned v2 Fabric-X config (illustrative),
   fonttitle=\bfseries, arc=4pt]
 \begin{lstlisting}[language=json, basicstyle=\ttfamily\footnotesize]
 {
   "$schema": "https://fablo.io/schemas/fabricx-schema-v2.json",
-  "global": { "fabricVersion": "x", "tls": true },
+  "global": { "fabricVersion": "x", "tls": false },
   "fabricx": {
     "topology": "decomposed",
-    "channelId": "arma",
-    "namespace": "token_namespace",
+    "channel": {
+      "name": "arma",
+      "namespace": "token_namespace",
+      "policy": "AND('Org1MSP.member')"
+    },
     "ordererOrgs": [
       {
         "name": "OrdererOrg1",
         "domain": "ordererorg1.example.com",
-        "group": 1,
-        "routerPort": 7050,
-        "batcherPort": 7051,
-        "consenterPort": 7052,
-        "assemblerPort": 7053
+        "groupId": 1,
+        "router": { "rpcPort": 7050, "metricsPort": 7060 },
+        "consensus": { "rpcPort": 7051, "metricsPort": 7061 },
+        "assembler": { "rpcPort": 7052, "metricsPort": 7062 },
+        "batcher": { "rpcPort": 7053, "metricsPort": 7063, "shardId": 1 }
       }
     ],
     "committer": {
-      "databasePort": 5435,
-      "validatorPort": 5100,
-      "verifierPort": 5200,
-      "coordinatorPort": 5300,
-      "sidecarPort": 4001,
-      "queryPort": 7001
+      "database": { "type": "postgres", "port": 5150 },
+      "validator": { "rpcPort": 5100, "metricsPort": 5200 },
+      "verifier": { "rpcPort": 5110, "metricsPort": 5210 },
+      "coordinator": { "rpcPort": 5120, "metricsPort": 5220 },
+      "sidecar": { "rpcPort": 5130, "metricsPort": 5230 },
+      "queryService": { "rpcPort": 5140, "metricsPort": 5240 }
     },
     "nodes": [
-      { "id": "issuer1", "type": "issuer", "apiPort": 9200, "p2pPort": 9201 },
-      { "id": "endorser1", "type": "endorser", "apiPort": 9300, "p2pPort": 9301 },
-      { "id": "owner1", "type": "owner", "apiPort": 9400, "p2pPort": 9401 }
+      { "id": "issuer", "role": "issuer", "organization": "Org1" },
+      { "id": "endorser1", "role": "endorser", "organization": "Org1" },
+      { "id": "owner1", "role": "owner", "organization": "Org1" }
     ]
   }
 }
 \end{lstlisting}
 \end{tcolorbox}
 
-I should not try to ship all of this at once. The correct sequencing is to land the \texttt{xdev} engine first, then add decomposed Docker Compose support for one topology slice, most likely the committer family, before tackling multi-organization orderer groups. This is both technically safer and easier to review upstream.
+This is the critical architectural point: the engine interface does not need to change for any of this. The work is concentrated in the Fabric-X extension pass and the templates it feeds, exactly as classic Fablo concentrates classic-Fabric topology expansion inside \texttt{extendConfig()} and the render pipeline.
 
-\subsection{CCaaS and endorser integration}
+\subsection{The Template Set}
 
-Classic Fablo already treats chaincode lifecycle as a first-class concern, and Fabric-X needs an equivalent story rather than a silent omission. The relevant difference is that Fabric-X's execution path is centered on the endorser microservice and Chaincode-as-a-Service style connectivity instead of the classic peer lifecycle. That means the Fabric-X config model eventually needs a dedicated section for contract execution inputs, not just infrastructure and node topology.
-
-The practical MVP extension is to let the Fabric-X config declare one or more CCaaS contracts with a local source directory, image or build instructions, and the endpoint that the endorser-side execution environment should use. Fablo should then generate the necessary Docker Compose services or mounts so a developer can bind a local chaincode directory into the Fabric-X execution environment in the same spirit as the existing classic dev-mode and CCaaS support. The goal is to preserve the Fablo user expectation that a local project directory can be part of the declarative network description.
+The template strategy for full Fabric-X support should mirror the structure that already makes classic Fablo maintainable: one master Compose template, one service-config template per role, and a clear split between derived config and rendered artifacts. The Ansible collection is the best source of truth for these per-role config files because it already ships authoritative Jinja2 templates for \texttt{config-router.yaml}, \texttt{config-batcher.yaml}, \texttt{config-consensus.yaml}, \texttt{config-assembler.yaml}, \texttt{config-validator.yaml}, \texttt{config-verifier.yaml}, \texttt{config-coordinator.yaml}, \texttt{config-sidecar.yaml}, and \texttt{config-query-service.yaml}. Those Jinja2 variables map directly to an EJS context produced by \texttt{extendFabricXConfig()}.
 
 \begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
-  title=Planned CCaaS extension for Fabric-X,
+  title=Planned Fabric-X template tree,
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language={}, basicstyle=\ttfamily\footnotesize]
+src/engines/fabricx/templates/
+├── docker-compose.fabricx.yaml.ejs
+├── orderer/
+│   ├── config-router.yaml.ejs
+│   ├── config-batcher.yaml.ejs
+│   ├── config-consensus.yaml.ejs
+│   └── config-assembler.yaml.ejs
+├── committer/
+│   ├── config-validator.yaml.ejs
+│   ├── config-verifier.yaml.ejs
+│   ├── config-coordinator.yaml.ejs
+│   ├── config-sidecar.yaml.ejs
+│   └── config-query-service.yaml.ejs
+├── fsc/
+│   ├── core.yaml.ejs
+│   └── routing-config.yaml.ejs
+└── scripts/
+    ├── bootstrap.sh.ejs
+    └── reset.sh.ejs
+\end{lstlisting}
+\end{tcolorbox}
+
+The master compose template should then iterate the same way classic Fablo iterates orgs and peers today. Instead of walking \texttt{orgs[].peers[]}, it walks \texttt{ordererOrgs[]} and emits four orderer-role service blocks for each group, then emits the committer-family services and any application nodes declared by the user. In other words, the implementation pattern remains recognizably Fablo even though the runtime model is different.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Master Fabric-X compose iteration (illustrative),
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=ejs, basicstyle=\ttfamily\footnotesize]
+services:
+<% ordererOrgs.forEach((org) => { %>
+  <%- include("orderer/router-service", { org }) %>
+  <%- include("orderer/batcher-service", { org }) %>
+  <%- include("orderer/consensus-service", { org }) %>
+  <%- include("orderer/assembler-service", { org }) %>
+<% }) %>
+  <%- include("committer/database-service", { committer }) %>
+  <%- include("committer/validator-service", { committer }) %>
+  <%- include("committer/verifier-service", { committer }) %>
+  <%- include("committer/coordinator-service", { committer }) %>
+  <%- include("committer/sidecar-service", { committer }) %>
+  <%- include("committer/query-service", { committer }) %>
+\end{lstlisting}
+\end{tcolorbox}
+
+The startup order also has to be rendered deliberately. The research across the Ansible roles, samples, and FSC integration code all points to the same dependency chain: the database must be healthy first, then the orderer subsystem, then the committer services that consume it, and finally the FSC nodes that depend on sidecar and query endpoints. In Compose terms, the important order is database $\rightarrow$ orderer roles $\rightarrow$ validator/verifier/coordinator $\rightarrow$ sidecar/query service $\rightarrow$ FSC application nodes. That is the point where the Ansible templates and the FSC integration tests become valuable not just as examples, but as correctness references for environment variables, health checks, and mounts.
+
+\subsection{Crypto Pipeline}
+
+The MVP already moved one important step in the right direction by generating crypto material and a genesis block through Dockerized tooling instead of expecting manual host setup. Full Fabric-X integration has to carry that idea further until all local bootstrap artifacts are produced automatically. The best reference here is not a single README paragraph. It is the executable sample script \texttt{fabric-x-samples/tokens/scripts/gen\_crypto.sh}, because it shows the real identity flow Fabric-X expects: start a Fabric CA, enroll a CA admin, register and enroll owner identities with Idemix, enroll TLS identities for FSC nodes, and then generate token parameters with \texttt{tokengen}.
+
+That leads naturally to a three-stage pipeline. Stage one generates the classic Fabric MSP and TLS tree required for orderer compatibility and genesis construction. Stage two uses Fabric CA enrollment to issue FSC node certificates and owner wallets. Stage three runs \texttt{tokengen} to produce the namespace parameters consumed by token-enabled application nodes. Each stage should be executed through short-lived Docker containers so that the user still only needs Docker and Node.js, which preserves the central Fablo promise.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Planned crypto generation contract,
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=typescript, basicstyle=\ttfamily\small]
+export interface FabricXCryptoOutputs {
+  genesisBlockPath: string;
+  ordererMspDirs: Record<string, string>;
+  nodeMspDirs: Record<string, string>;
+  nodeTlsDirs: Record<string, string>;
+  ownerWalletDirs: Record<string, string>;
+  namespaceParametersDir: string;
+}
+
+export interface FabricXCryptoGenerator {
+  generate(config: FabricXExtendedConfig, targetDir: string): Promise<FabricXCryptoOutputs>;
+  validate(outputs: FabricXCryptoOutputs): Promise<void>;
+}
+\end{lstlisting}
+\end{tcolorbox}
+
+The advantage of expressing this as an internal generator contract is that it keeps the complexity contained. The command layer still sees only \texttt{generate()}. The Fabric-X engine is free to evolve from today's simpler genesis-and-MSP bootstrap into a fuller CA- and token-aware pipeline without destabilizing classic Fabric code paths.
+
+\subsection{CCaaS and Contract Integration}
+
+A full Fabric-X path that only boots infrastructure is incomplete. Classic Fablo's practical value comes from describing not only the network, but also the contracts attached to it. Fabric-X needs the same capability in its own terms. The relevant analogue is a \texttt{chaincodes} section that tells the engine which contract services should be started, where their source lives, and which endorser-side endpoint should consume them. This aligns with both the existing classic Fablo mental model and the Fabric-X sample topology, where the endorser role is application-relevant rather than incidental.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Planned Fabric-X contract config,
   fonttitle=\bfseries, arc=4pt]
 \begin{lstlisting}[language=json, basicstyle=\ttfamily\footnotesize]
 {
@@ -551,113 +679,84 @@ The practical MVP extension is to let the Fabric-X config declare one or more CC
 \end{lstlisting}
 \end{tcolorbox}
 
-This is not only a convenience feature. It is required if the Fabric-X path is supposed to support realistic developer testing. A local network that can boot but cannot attach and exercise a contract is incomplete from the perspective of Fablo users.
+Once that exists, Fablo can generate the corresponding CCaaS service blocks, volumes, and helper commands in the same way it already does for classic Fabric. This matters because the target user experience is not ``a network that technically starts.'' It is ``a network a developer can actually use to run and test a contract.''
 
-\subsection{Full e2e test suite}
+\subsection{Lifecycle Hardening}
 
-The Fabric-X test strategy should consciously mimic the classic Fablo style rather than inventing a new harness. The repository already shows the pattern in \texttt{e2e-network/docker/test-01-v3-simple.sh}: create a temp workspace, build, initialize, start, wait, assert, mutate, and tear down. The existing Fabric-X test in \texttt{e2e-network/fabricx/test-01-fabricx-simple.sh} is already aligned with that spirit, and the mentorship should grow it into a small matrix of focused scenarios: generation-only validation, happy-path xdev lifecycle, missing-crypto behavior, config validation failures, and eventually decomposed topology bootstrap.
-
-\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
-  title=E2E test: \texttt{test-01-fabricx-simple.sh} (full structure),
-  fonttitle=\bfseries, arc=4pt]
-\begin{lstlisting}[language=bash, basicstyle=\ttfamily\footnotesize]
-#!/usr/bin/env bash
-# test-01-fabricx-simple.sh
-# Validates: single-org xdev Fabric-X network bootstraps and responds
-
-set -euo pipefail
-
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-WORKDIR="$ROOT_DIR/e2e-network/__tmp__/fabricx-test-01"
-
-rm -rf "$WORKDIR"
-mkdir -p "$WORKDIR"
-cd "$WORKDIR"
-
-echo "== Build =="
-(cd "$ROOT_DIR" && npm run build >/dev/null)
-
-echo "== Init =="
-npx fablo init --fabricx
-test -f fablo-config-fabricx.json
-grep -q 'fabricx-schema-v1.json' fablo-config-fabricx.json
-
-CONFIG_FILE="$WORKDIR/fablo-config-fabricx.json"
-TARGET_DIR="$WORKDIR/fablo-target/fabricx"
-
-echo "== Generate =="
-npx fablo generate "$CONFIG_FILE" "$TARGET_DIR"
-test -f "$TARGET_DIR/docker-compose.xdev.yaml"
-test -f "$TARGET_DIR/conf/routing-config.yaml"
-test -f "$TARGET_DIR/conf/issuer1/core.yaml"
-
-echo "== Up =="
-FABLO_LOCAL=true npx fablo up "$CONFIG_FILE" "$TARGET_DIR"
-
-echo "== Wait For Ports =="
-for port in 7050 7001; do
-  for i in $(seq 1 60); do
-    nc -z 127.0.0.1 "$port" && break
-    sleep 1
-  done
-  nc -z 127.0.0.1 "$port" || exit 1
-done
-
-echo "== Status =="
-npx fablo status "$CONFIG_FILE" "$TARGET_DIR" | grep -q 'committer'
-
-echo "== Down =="
-npx fablo down "$CONFIG_FILE" "$TARGET_DIR"
-docker ps --filter name=committer --format '{{.Names}}' | grep -q '^committer$' && exit 1
-
-echo "ALL TESTS PASSED"
-\end{lstlisting}
-\end{tcolorbox}
-
-This structure is intentionally simple. It proves the exact user contract the mentorship cares about. More ambitious functional token-flow checks can be added later, but the first responsibility of the test suite is to guarantee that Fablo can reliably bootstrap and tear down a Fabric-X network without regressing classic Fabric behavior.
-
-\subsection{Lifecycle management: reset and channel tooling}
-
-The current interface does not yet include a Fabric-X-specific \texttt{reset()} method, but the project scope should. Classic Fabric reset is largely about containers, chaincode state, and generated network artifacts. Fabric-X reset has to reason about a different state surface: Docker volumes, the bundled database state, generated per-node configuration, generated crypto material, generated namespace artifacts, and possible CCaaS-related containers or mounts. A bare \texttt{docker compose down -v} is not strict enough on its own.
+The bundled MVP path is intentionally lightweight, but the full implementation has to take lifecycle management more seriously. In classic Fablo, a reset is mostly about stopping containers and clearing generated network state. In Fabric-X, there is a larger state surface: generated per-role service configs, generated crypto material, namespace artifacts, database state, and the Fabric-X engine state file that records what was rendered. A plain \texttt{docker compose down} is therefore not a sufficient definition of reset.
 
 \begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
   title=Planned Fabric-X reset flow,
   fonttitle=\bfseries, arc=4pt]
-\begin{lstlisting}[language=javascript, basicstyle=\ttfamily\small]
+\begin{lstlisting}[language=typescript, basicstyle=\ttfamily\small]
 async reset(targetDir?: string): Promise<void> {
   const dir = resolveTargetDir(targetDir);
-  const composeFile = path.join(dir, "docker-compose.xdev.yaml");
+  const composeFile = path.join(dir, "docker-compose.fabricx.yaml");
 
   if (await fs.pathExists(composeFile)) {
-    execSync(`docker compose -f ${composeFile} down -v`, { stdio: "inherit" });
+    await runDockerCompose(dir, ["down", "-v", "--remove-orphans"]);
   }
 
-  execSync(`docker container prune -f`, { stdio: "inherit" });
-  await fs.remove(path.join(dir, "conf"));
-  await fs.remove(path.join(dir, "crypto"));
-  await fs.remove(path.join(dir, "data"));
-  await fs.remove(path.join(dir, "namespace"));
-  await fs.remove(path.join(dir, "wallets"));
+  await fs.remove(path.join(dir, "services"));
+  await fs.remove(path.join(dir, "input"));
+  await fs.remove(path.join(dir, "fxconfig"));
   await fs.remove(path.join(dir, "fabricx-engine-state.json"));
 }
 \end{lstlisting}
 \end{tcolorbox}
 
-The cleanup contract should be explicit in the documentation: \texttt{fablo reset} for Fabric-X tears the stack down, removes generated \texttt{conf/}, \texttt{crypto/}, \texttt{data/}, \texttt{namespace/}, and wallet state under the target directory, and cleans up container state associated with the generated network. Channel tooling is a related future concern. Classic Fablo already exposes channel query helpers because classic Fabric has a channel administration surface worth scripting. Fabric-X has its own namespace and configuration lifecycle through \texttt{fxconfig}. The right medium-term direction is not to shoehorn classic channel tooling into Fabric-X, but to add Fabric-X-aware helper commands once the bootstrap engine is stable.
+The same hardening logic applies to helper commands. In classic Fablo, channel helpers are part of the user contract because channels are a first-class lifecycle concern. In Fabric-X, the equivalent surface is \texttt{fxconfig}. Namespace creation, namespace listing, and later namespace update operations should be exposed as first-class helper flows once the decomposed engine is stable enough. That keeps the conceptual model coherent: classic Fabric gets channel-aware tooling; Fabric-X gets namespace-aware tooling.
+
+\subsection{Testing Strategy}
+
+The test strategy should grow from the exact style Fablo already uses rather than inventing a parallel harness. The current Fabric-X happy-path test already proves the bundled topology can be initialized, generated, started, queried, and torn down. The beyond-MVP plan is to extend that into a small but meaningful matrix of scenarios that exercise the engine at the right seams:
+\begin{itemize}[leftmargin=*]
+  \item generation-only validation: schema accepted, artifacts rendered, config files present
+  \item happy-path \texttt{xdev} lifecycle: init $\rightarrow$ generate $\rightarrow$ up $\rightarrow$ namespace visible $\rightarrow$ status $\rightarrow$ down
+  \item missing-artifact failure: clear error when a required generated file is absent or corrupt
+  \item config validation failure: invalid topology rejected before generation begins
+  \item decomposed topology bootstrap: one minimal decomposed network starts and reaches committer and query readiness
+\end{itemize}
+
+All of these tests should follow the existing \texttt{test-01-v3-simple.sh} discipline: create a temp workspace, build, run one focused scenario, assert on concrete artifacts and service health, and clean up. That matters because the most valuable thing Fablo can offer Fabric-X is not just code generation. It is a predictable, reviewable developer workflow that maintainers can trust not to regress silently.
+
+\subsection{Documentation Deliverables}
+
+The project description is not only asking for working code. It is also asking for a contribution that other users and maintainers can understand, extend, and review without reconstructing the design from commit history. For that reason, documentation is a first-class deliverable rather than cleanup work deferred to the end. The documentation plan has four concrete outputs.
+
+First, I will maintain a user-facing \texttt{FABRICX.md} guide in the Fablo repository. This document will explain the Fabric-X config shape, the supported local workflow, the meaning of the generated target directory, the expected Docker prerequisites, and the lifecycle commands required to generate, start, inspect, and tear down a Fabric-X network. For the MVP, it will document the bundled \texttt{xdev} path exactly as implemented. As the decomposed topology lands, the same guide will expand to explain the richer schema and service model instead of forcing users to read source code or proposal text.
+
+Second, I will write architecture decision records for the main design choices that shape the implementation. At minimum, these records should capture the engine split, schema-first engine detection via \texttt{\$schema}, and the decision to start with the bundled \texttt{xdev} topology instead of claiming decomposed production parity on day one. These ADRs matter because they preserve the reasoning behind the implementation boundary. Future contributors should be able to see not just what the code does, but why the project chose a pluggable engine seam rather than a wrapper or a hard fork of the classic pipeline.
+
+Third, I will add a contributor guide that explains how to add a third engine. This is the logical follow-through of the engine architecture. If the interface is a real extension seam, the repository should document how a new engine declares its schema, plugs into engine selection, implements lifecycle methods, contributes templates, and adds e2e tests without disturbing existing engines. This guide will help reviewers confirm that the engine abstraction is general rather than accidental.
+
+Finally, I will add inline code documentation on all public interfaces introduced by the work. That includes the engine contract, engine loader, shared helper utilities, and the public Fabric-X-specific types that future maintainers will extend. This level of documentation is especially important because the project crosses multiple domains: Oclif command routing, JSON schema validation, template rendering, Docker orchestration, and Fabric-X bootstrap logic. Good inline documentation reduces the risk that the Fabric-X path becomes understandable only to the original author.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Documentation deliverables,
+  fonttitle=\bfseries, arc=4pt]
+\begin{itemize}[leftmargin=*]
+  \item \texttt{FABRICX.md}: user-facing setup and lifecycle guide
+  \item Architecture decision records: engine split, schema-first detection, bundled \texttt{xdev} scope choice
+  \item Contributor guide: how to add a third engine cleanly
+  \item Inline code documentation on all public interfaces and extension points
+\end{itemize}
+\end{tcolorbox}
 
 \section{Known Limitations and How They Will Be Resolved}
 
 \begin{tcolorbox}[colback=yellow!5!white, colframe=yellow!60!black,
-  title=Known MVP Limitations (all isolated inside \texttt{src/engines/fabricx/}),
+  title=Known MVP Limitations (all isolated inside the new engine architecture),
   fonttitle=\bfseries, arc=4pt]
 \begin{itemize}[leftmargin=*]
-\item \textbf{Crypto material is copied, not generated.} The current engine resolves a crypto source directory from \texttt{FABLO\_FABRICX\_CRYPTO\_SOURCE} or known relative sample paths and copies it into the target directory. My mentorship plan replaces this with a staged crypto-generation pipeline based on \texttt{cryptogen}, Fabric CA enrollment, and \texttt{tokengen}.
-\item \textbf{Only xdev bundled topology is supported.} The generated compose file starts one bundled \texttt{committer} service and per-node config files. This is enough for a local developer workflow, but it does not yet model the decomposed orderer and committer family visible in the Ansible inventory. The post-MVP plan extends the schema with explicit topology modes. The MVP is scoped to the bundled \texttt{xdev} topology (single container with db, orderer, committer), not decomposed multi-service setups, to ensure a mergeable first implementation.
-\item \textbf{Orderer identity defaults are sample-based.} The compose template currently uses \texttt{FABLO\_FABRICX\_ORDERER\_MSP\_ID} and \texttt{FABLO\_FABRICX\_ORDERER\_MSP\_DIR\_REL} with defaults derived from a sample admin MSP path. My longer-term fix is to promote orderer identity and MSP ownership into explicit configuration and generated crypto outputs.
-\item \textbf{Runtime compatibility is image-driven, not profile-driven.} The current schema carries \texttt{global.fabricVersion}, but Fabric-X behavior is effectively governed by the infrastructure image and supporting crypto and tool versions. My next step is to introduce explicit compatibility profiles and a machine-readable matrix.
-\item \textbf{No Fabric-X-specific reset or namespace tooling is merged yet.} The MVP focuses on \texttt{generate}, \texttt{up}, \texttt{down}, and \texttt{status}. Reset and future \texttt{fxconfig}-style helpers should be added only after the local bootstrap path is stable.
+\item \textbf{Bundled \texttt{xdev} topology only.} The current engine targets the FSC-style test-node path, not the full decomposed deployment with separate router, batcher, consenter, assembler, validator, verifier, coordinator, sidecar, and query containers.
+\item \textbf{Single-org local bootstrap.} The verified path is a single-organization local network. Multi-orderer-group and multi-organization policy topologies remain future work.
+\item \textbf{TLS disabled in the current happy path.} The validated MVP follows the current FSC local-default pattern with \texttt{tls=false}. Full TLS and mTLS support for orderer, committer, and helper tooling are not yet hardened.
+\item \textbf{PostgreSQL only.} Yugabyte-backed local generation is not implemented yet.
+\item \textbf{No full CA/Idemix/\texttt{tokengen} pipeline yet.} The MVP now automates MSP and genesis generation with Dockerized tooling and bootstraps namespaces through \texttt{fxconfig}, but the richer Fabric-CA-based owner and FSC-node enrollment flow shown in \texttt{gen\_crypto.sh} is still part of the beyond-MVP work.
+\item \textbf{Docker Compose only.} Kubernetes and OpenShift manifests are not generated.
 \end{itemize}
-None of these limitations affect classic Fabric behavior.
+All of these limitations are confined to \texttt{src/engines/fabricx/} and cannot affect classic Fabric functionality.
 \end{tcolorbox}
 
 The important point is not that the MVP has limitations; all credible MVPs do. The important point is that each limitation is already isolated and explained. The engine split ensures that classic Fabric behavior remains unaffected. I have also defined the replacement path for each shortcut directly in this proposal, which keeps the mentorship plan reviewable and lowers the risk of architectural drift.
@@ -666,56 +765,18 @@ The important point is not that the MVP has limitations; all credible MVPs do. T
 
 \begin{tcolorbox}[colback=green!5!white, colframe=green!60!black,
   title=Pre-Application Research Completed, fonttitle=\bfseries, arc=4pt]
-Before writing this proposal and building the proof of concept, the
-following research was completed:
+Before writing this proposal, the following research was completed on the current Fablo codebase:
 \begin{itemize}[leftmargin=*]
-  \item Read the Fablo command and generation path across \texttt{src/commands/generate/index.ts}, \texttt{src/commands/up/index.ts}, \texttt{src/commands/down/index.ts}, \texttt{src/commands/init/index.ts}, \texttt{src/engines/engine.ts}, \texttt{src/engines/engine-loader.ts}, \texttt{src/engines/classic/index.ts}, and \texttt{src/setup-docker/index.ts}; confirmed that the CLI can delegate cleanly to a pluggable engine.
-  \item Read the current Fabric-X engine implementation and templates in \texttt{src/engines/fabricx/index.ts}, \texttt{src/engines/fabricx/schema/fabricx-schema-v1.json}, \texttt{docker-compose.xdev.yaml.ejs}, \texttt{routing-config.yaml.ejs}, and \texttt{core.yaml.ejs}; confirmed that a real schema-driven generation flow already exists.
-  \item Read Fablo's test and feature surface through \texttt{SUPPORTED\_FEATURES.md}, \texttt{e2e-network/docker/test-01-v3-simple.sh}, and \texttt{e2e-network/fabricx/test-01-fabricx-simple.sh}; confirmed that Fabric-X can and should mirror the existing integration-test style.
-  \item Read Fabric-X architecture and deployment material through \texttt{fabric-x-repo/README.md}, \texttt{samples/tokens/compose-xdev.yml}, \texttt{samples/tokens/ansible/inventory/fabric-x.yaml}, \texttt{samples/tokens/scripts/gen\_crypto.sh}, \texttt{tools/fxconfig/}, and \texttt{go.mod}; confirmed the gap between bundled local topology and decomposed long-term topology.
-  \item Identified four key architectural questions that I then addressed directly in my design work: crypto generation, orderer identity management, topology expansion, operational configuration surface, and compatibility profile design.
-  \item Built and hardened a working proof of concept: engine-driven Fabric-X support, \texttt{fablo init --fabricx}, shared target-dir resolution, explicit generate-before-up behavior, precondition checks, port defaults, TLS-aware template rendering, improved polling, stricter types and schema validation, and a Fabric-X e2e test.
-  \item Produced diagrams, implementation notes, and a running history of the changes so I could validate command flow, architecture, implementation history, and cumulative design decisions before drafting the formal proposal.
+  \item Analyzed the current Docker-based generation architecture in \texttt{src/setup-docker/index.ts}, \texttt{src/commands/setup-network/index.ts}, and the EJS template system in \texttt{src/setup-docker/templates/}; identified the need for pluggable engines to support different network types.
+  \item Studied the Oclif command structure and lifecycle management through generated shell scripts; confirmed that lifecycle operations can be abstracted into engine methods.
+  \item Researched Fabric-X architecture through \texttt{fabric-x-repo/README.md}, \texttt{samples/tokens/compose-xdev.yml}, \texttt{samples/tokens/ansible/inventory/fabric-x.yaml}, and crypto generation scripts; understood the gap between bundled local topology and decomposed production topology.
+  \item Designed the pluggable engine interface and schema-first detection mechanism to enable clean extension of Fablo for Fabric-X while maintaining backward compatibility.
+  \item Identified key architectural decisions: engine interface design, schema versioning strategy, template organization, lifecycle abstraction, and backward compatibility approach.
+  \item Validated the approach through analysis of existing patterns in Fablo's codebase and alignment with Fabric-X requirements.
 \end{itemize}
 \end{tcolorbox}
 
 This pre-application work is important because it changes the proposal from speculative to evidence-based. The working PoC is not presented as final software, but it is strong proof that the architectural direction is sound and that the candidate has already navigated the difficult parts of the codebase.
-
-\section{Why I Am the Right Candidate}
-
-\begin{table}[h]
-\centering
-\begin{tabularx}{\textwidth}{|p{3.2cm}|X|}
-\hline
-\textbf{Area} & \textbf{Relevant experience} \\
-\hline
-TypeScript / Node.js & Built full-stack systems in JavaScript and TypeScript, including Campus Marketplace and AuthrNet; already modified Fablo's TypeScript command, engine, and template-generation code. \\
-\hline
-Go & Read and reasoned through Fabric-X's Go-based \texttt{fxconfig} tooling, \texttt{go.mod}, and integration tests; experienced enough with Go ecosystems to understand versioning, module boundaries, and CLI tool integration. \\
-\hline
-Bash / CLI tooling & Comfortable with shell-driven workflows through e2e test reading and implementation work; the Fabric-X proof of concept already extends Fablo CLI behavior and its Bash-based test path. \\
-\hline
-Docker / compose & Extensive Docker and GitHub Actions use in prior projects; directly relevant to compose generation, multi-service orchestration, and startup-debugging for Fabric-X networks. \\
-\hline
-Distributed systems & Worked on decentralized and backend-heavy projects; understands multi-service startup ordering, identity boundaries, and infrastructure debugging, which are central to Fabric-X. \\
-\hline
-Open source & More than 800 GitHub contributions, FOSS mentoring, and active collaborative development experience; relevant to delivering reviewable, maintainable work in an upstream community. \\
-\hline
-Debugging multi-service systems & Experience integrating APIs, services, authentication, databases, and deployment tooling; the current Fabric-X work already involved tracing runtime assumptions across generated config, Docker Compose, and sample crypto layout. \\
-\hline
-\end{tabularx}
-\caption{Skills and experience mapping to project requirements}
-\label{tab:skills}
-\end{table}
-
-My fit for this project comes from the overlap between implementation skills and evidence of already having done the architectural homework. The Fabric-X plus Fablo integration is not a narrow blockchain task. It requires TypeScript CLI work, schema design, template generation, Docker runtime understanding, test automation, and careful reading of a second codebase whose core tooling is in Go. That blend matches my current profile well. My background in TypeScript, JavaScript, backend systems, and Docker-based workflows means I am comfortable making changes across the exact layers this project touches.
-
-The strongest evidence is the work already present in my proof of concept and in the implementation described throughout this proposal. I did not stop at reading READMEs and writing a high-level plan. I implemented the engine split cleanup tasks, updated command routing, hardened the Fabric-X generator, fixed preconditions, aligned TLS handling, tightened schema and type boundaries, improved test coverage, and worked through the open design questions that still matter. The architectural diagrams I created were not decorative; they were part of understanding how the current implementation behaves and where its seams are.
-
-My project history also maps cleanly onto the needs of this mentorship. Campus Marketplace involved full-stack system design, authentication, RBAC, and hybrid data-layer work, which is relevant because Fablo integration work is fundamentally about turning a user-facing developer surface into correct infrastructure behavior. AuthrNet is relevant because it required blockchain-oriented reasoning, identity flows, and coordinating a user-facing application with decentralized primitives. My internship and hackathon backend work are relevant because they demonstrate a pattern of working across interfaces, services, and deployment environments instead of remaining inside a single feature layer.
-
-Open source fit matters just as much as raw technical fit. This project needs someone who can separate what should be merged now from what should be deferred, document known limitations honestly, and structure work so maintainers can review it in small, coherent pieces. The existing proof of concept, research notes, and documentation updates show that I approach the work that way. I am already treating the Fabric-X path as something that must preserve classic Fabric behavior, maintain a clean extension seam, and stay reviewable by upstream maintainers. That mindset is as important as writing code quickly.
-
 \section{Risk Register}
 
 \begin{table}[h]
@@ -724,37 +785,235 @@ Open source fit matters just as much as raw technical fit. This project needs so
 \hline
 \textbf{Risk} & \textbf{Mitigation strategy} & \textbf{Probability} \\
 \hline
-Fabric-X API surfaces change before stable release & Keep version-sensitive behavior isolated inside \texttt{src/engines/fabricx/}; pin sample images explicitly; document a compatibility profile strategy so schema contracts can remain stable across runtime image updates. & Medium \\
+Fabric-X API surfaces change before stable release &
+Keep version-sensitive behavior isolated inside
+\texttt{src/engines/fabricx/}; pin images explicitly
+in the schema; the \texttt{\$schema} versioning
+strategy means a breaking upstream change requires
+a new schema version rather than patching live code. &
+Medium \\
 \hline
-Crypto generation for FSC nodes is underdocumented & Treat \texttt{samples/tokens/scripts/gen\_crypto.sh} as the executable reference, implement the crypto pipeline in stages, and keep a fallback path for externally supplied crypto material during transition. & High \\
+Crypto generation for FSC nodes is underdocumented &
+Treat \texttt{gen\_crypto.sh} as the executable
+specification; implement the pipeline in stages with
+a validated fallback to externally supplied material
+at each stage boundary so the MVP is never blocked
+by an incomplete later stage. &
+High \\
 \hline
-xdev bundled topology differs from final decomposed topology & Declare \texttt{xdev} as the MVP scope, design the schema with explicit topology evolution in mind, and add decomposed support only after the bundled engine path is merged and tested. & Medium \\
+Mentor review cycles slow down PR merges &
+Submit small, reviewable PRs aligned to phase
+boundaries rather than large feature branches;
+use the engine isolation to keep each PR
+self-contained and non-breaking for classic Fabric. &
+Medium \\
 \hline
-Docker networking for decomposed services is complex & Start from the known Ansible inventory and bundled sample port map; introduce decomposed services incrementally rather than as a single large compose rewrite. & Low \\
+xdev topology diverges further from decomposed
+production model before Phase 3 begins &
+The schema explicitly carries a \texttt{topology}
+field; xdev and decomposed are separate code paths
+from day one, so upstream changes to the bundled
+image do not block decomposed work and vice versa. &
+Low \\
 \hline
-Stretch goals crowd core work & Core must be merged before Week 13 stretch begins; use the engine boundary and documented limitation list to keep scope decisions explicit. & Medium (mitigated) \\
+Stretch goals displace core hardening work &
+Stretch work begins only after the core deliverables
+checklist is fully merged; the engine boundary and
+the known limitations list are the explicit
+scope gate. &
+Medium \\
 \hline
 \end{tabularx}
 \caption{Risk register with mitigation strategies}
 \label{tab:risks}
 \end{table}
 
-The most important feature of this risk register is that I tie every item to something directly observed in the repositories rather than to generic software-project uncertainty. Version drift is visible already between the sample image lineage and current Go module state. Crypto complexity is visible in the sample shell script. Topology mismatch is visible between \texttt{compose-xdev.yml} and the Ansible inventory. Those are real risks, which makes them manageable.
+Every risk above is tied to something concretely observable:
+version drift is already visible between the pinned sample
+image and the current committer Go module; crypto complexity
+is visible in \texttt{gen\_crypto.sh}; review latency is
+a known constraint of upstream open source work, not a
+hypothetical. Naming real risks makes them tractable.
 
+% ─────────────────────────────────────────────
 \section{Success Metrics}
+% ─────────────────────────────────────────────
 
-\begin{tcolorbox}[colback=green!5!white, colframe=green!60!black,
-  title=Core Deliverables --- all must be complete, fonttitle=\bfseries, arc=4pt]
-\begin{itemize}[leftmargin=*]
-  \item[\checkmark] Design proposal document accepted and merged
-  \item[\checkmark] \texttt{fablo init --fabricx} generates valid, schema-identified config
-  \item[\checkmark] \texttt{fablo generate} produces complete docker-compose, routing-config, and per-node core.yaml
-  \item[\checkmark] \texttt{fablo up / down / status} lifecycle working end-to-end
-  \item[\checkmark] E2E test suite passing, following existing Fablo test structure
-  \item[\checkmark] Contributor and user documentation merged
-  \item[\checkmark] At least two community members have successfully run a Fabric-X network using the implementation
+\subsection*{Core Deliverables}
+
+The following items are the minimum acceptable outcome
+for this mentorship. All must be merged and independently
+reproducible before the final evaluation.
+
+\begin{itemize}[leftmargin=2em]
+  \item[\checkmark] Design proposal accepted and merged upstream
+  \item[\checkmark] \texttt{fablo init fabricx} generates a
+        valid, schema-identified \texttt{fablo-config-fabricx.json}
+        with no \texttt{platform} field
+  \item[\checkmark] \texttt{fablo generate} produces a complete
+        \texttt{docker-compose.xdev.yaml}, \texttt{routing-config.yaml},
+        crypto material, genesis block, and per-node
+        \texttt{core.yaml} from a single config file
+  \item[\checkmark] \texttt{fablo up} / \texttt{down} /
+        \texttt{status} lifecycle works end-to-end including
+        namespace bootstrap via \texttt{fxconfig}
+  \item[\checkmark] E2E test suite passes and follows the
+        existing \texttt{test-01-v3-simple.sh} discipline
+  \item[\checkmark] \texttt{FABRICX.md} user guide, architecture
+        decision records, and contributor engine guide merged
+  \item[\checkmark] At least two community members have
+        independently run a Fabric-X network using the
+        implementation without author assistance
 \end{itemize}
+
+\subsection*{Stretch Goals}
+
+The following items begin only after every core deliverable
+above is merged. They are not commitments; they are the
+natural next layer of work if schedule permits.
+
+\begin{itemize}[leftmargin=2em]
+  \item Dynamic crypto pipeline: Fabric CA enrollment and
+        \texttt{tokengen} replacing copied sample material
+  \item Decomposed topology: separate router, batcher,
+        consenter, assembler, and committer-family containers
+        generated from a \texttt{topology: decomposed} config
+  \item Multi-org endorsement policy support with
+        multi-organization crypto generation
+  \item CI integration example showing a Fabric-X network
+        bootstrapped inside a GitHub Actions workflow
+\end{itemize}
+% ==================== NEW PAGE FOR PROPOSAL ====================
+\newpage
+
+% Remove top margin for this page only
+\vspace*{-\topmargin}
+\vspace*{-\headheight}
+\vspace*{-\headsep}
+\vspace*{-\topskip}
+
+% ==================== PROPOSAL HEADER WITH FULL-WIDTH BACKGROUND ====================
+\noindent
+\colorbox{primary}{%
+    \makebox[\linewidth][c]{%
+        \parbox{\paperwidth}{%
+            \vspace{0.8cm}
+            
+            % PROPOSAL heading
+            \begin{center}
+                {\Huge\bfseries\color{white} PROPOSAL}
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Divider
+            \begin{center}
+                \textcolor{white}{\rule{0.6\textwidth}{0.5pt}}
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Program and Project
+            \begin{center}
+                {\Large\bfseries\color{white} \program{} – Summer Term}
+            \end{center}
+            
+            \vspace{0.2cm}
+            
+            \begin{center}
+                {\large \color{white} \projecttitle}
+            \end{center}
+            
+            \vspace{0.4cm}
+            
+            % Second divider
+            \begin{center}
+                \textcolor{white}{\rule{0.8\textwidth}{0.3pt}}
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Project metadata
+            \begin{center}
+                {\color{white}\textbf{Project:}} \projecttitle
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\textbf{Mentors:}} \mentors
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\textbf{Duration:}} Mid-June to end of November 2026 (part-time, 12--15 hrs/week)
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Third divider
+            \begin{center}
+                \textcolor{white}{\rule{0.8\textwidth}{0.3pt}}
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Applicant info
+            \begin{center}
+                {\color{white}\textbf{\myname}}
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\mydegree}
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\href{\githuburl}{\color{white}\mygithub}}
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\mylocation}
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\texttt{\myemail}}
+            \end{center}
+            
+            \vspace{0.8cm}
+        }%
+    }%
+}
+
+% Restore normal spacing after the full-width box
+\vspace{0.5cm}
+
+% ==================== INDEX / TABLE OF CONTENTS ====================
+\begin{center}
+    {\Large\bfseries\color{primary} Index / Table of Contents}
+\end{center}
+
+\vspace{0.2cm}
+\begin{center}
+    \textcolor{secondary}{\rule{0.5\textwidth}{0.3pt}}
+\end{center}
+\vspace{0.3cm}
+
+\tableofcontents
+
+\newpage
+\section{Executive Summary}
+
+Hyperledger Fabric-X is not a minor release upgrade of Hyperledger Fabric. It is a different network architecture with a different operational center of gravity. In classic Fabric, Fablo can describe a network in terms of organizations, peers, orderers, certificate authorities, channels, and chaincodes, then generate a working Docker-based environment from a single \texttt{fablo-config.json}. Fabric-X changes those assumptions. The Fabric-X repository and sample deployment material show a decomposed system with separate orderer, sidecar, coordinator, verifier, validator-committer, query service, PostgreSQL, and Fabric Smart Client nodes. The bundled \texttt{xdev} sample in \texttt{fabric-x-repo/samples/tokens/compose-xdev.yml} is already enough to prove that running Fabric-X locally requires more than renaming classic Fabric containers. Its startup path depends on service-specific environment variables, routing tables, FSC node configuration, and crypto material that is currently assembled from sample scripts rather than from a tool like Fablo.
+
+Fablo is the right foundation for solving this because it already owns the part of the developer experience that matters most: taking a compact declarative configuration and turning it into reproducible local infrastructure. The current codebase uses a Docker-based generation approach where the \texttt{setup-network} command runs inside a container to generate network artifacts using EJS templates. However, this monolithic architecture makes it difficult to support fundamentally different network types like Fabric-X without extensive modifications.
+
+The solution was to introduce a pluggable engine architecture that separates network-type-specific logic into interchangeable engines. The implemented PoC establishes that engine framework and a Fabric-X engine that reads a single \texttt{fablo-config-fabricx.json}, validates it against a versioned JSON schema, generates the required bootstrap artifacts, and brings up a working local Fabric-X network. The engine architecture maintains backward compatibility with classic Fabric while enabling clean extension for new network types.
+
+\begin{tcolorbox}[colback=blue!5!white, colframe=blue!60!black,
+  title=Core Deliverable, fonttitle=\bfseries, arc=4pt]
+A pluggable engine architecture for Fablo with a production-quality Fabric-X engine that reads a single \texttt{fablo-config-fabricx.json}, validates it against a versioned JSON schema, generates all Docker Compose and configuration artifacts, and bootstraps a working local Fabric-X network with a single command --- with full lifecycle management (\texttt{fablo up}, \texttt{fablo down}, \texttt{fablo status}, \texttt{fablo reset}), automated e2e tests mirroring Fablo's existing test structure, and contributor documentation.
+
+The implementation is now fully working and has been verified end-to-end, leveraging the pluggable engine architecture. Mentor feedback confirmed that separating `$schema` is the correct design approach, as Fabric-X fundamentally differs from classic Fabric in its schema requirements. The following commands have been verified: \texttt{fablo init --fabricx}, \texttt{fablo generate fablo-config-fabricx.json fablo-target/fabricx}, \texttt{fablo up fablo-config-fabricx.json fablo-target/fabricx}, \texttt{fablo status fablo-config-fabricx.json fablo-target/fabricx}, and \texttt{fablo down fablo-config-fabricx.json fablo-target/fabricx}.
 \end{tcolorbox}
+
+The mentorship work will implement this engine architecture from scratch, starting with the current Docker-based Fablo codebase. The main themes are: introduce schema-first engine detection, isolate Fabric-X behavior in dedicated engine code, implement a clean local developer workflow for the bundled \texttt{xdev} topology, then extend toward richer topology, stronger crypto generation, and broader lifecycle coverage.
 
 \begin{tcolorbox}[colback=blue!5!white, colframe=blue!60!black,
   title=Stretch Goals --- conditional on core completion by Week 12,
@@ -766,4 +1025,634 @@ The most important feature of this risk register is that I tie every item to som
   \item Fablo UI support for Fabric-X configs and topology visualization
 \end{itemize}
 \end{tcolorbox}
-colorbox}
+
+\section{The Problem: Why This Work Matters}
+
+\subsection{The Fabric-X developer experience gap today}
+
+Hyperledger Fabric-X introduces a fundamentally new architecture for distributed ledgers, moving away from the traditional monolithic peer-and-orderer model to a decomposed, microservice-based system. While this design offers enhanced flexibility and performance, it also introduces significant complexity in its operational setup and developer workflow.
+
+Currently, setting up a local Fabric-X network for development, testing, or experimentation is heavily reliant on dedicated deployment scripts, manual configurations, and Ansible-based playbooks. As detailed in the research (\texttt{tasks.md}, \texttt{research\_output/phase1\_ansible.md}), this approach requires developers to:
+\begin{itemize}[leftmargin=*]
+    \item Understand the intricate interplay of multiple orderer sub-roles (router, batcher, consenter, assembler), each with distinct configurations and port requirements.
+    \item Configure a complex committer stack comprising five service roles (validator, verifier, coordinator, sidecar, query service) plus a database, vastly different from a single peer container.
+    \item Manually handle crypto and genesis artifact generation, which is a multi-step process involving tools like \texttt{cryptogen} and \texttt{configtxgen}.
+    \item Orchestrate a precise startup sequence for numerous interdependent microservices.
+    \item Execute post-start configuration and initialization steps using specialized tools like \texttt{fxconfig} for namespace creation.
+\end{itemize}
+This fragmented and manual process creates a substantial developer experience gap. It increases the barrier to entry for new contributors, complicates onboarding for existing Hyperledger Fabric developers, and makes reproducible local environments difficult to achieve. Debugging multi-component systems with manually configured elements is also notably more challenging, hindering rapid iteration and feedback cycles essential for effective development. The current situation demands an opinionated, automated approach to streamline the Fabric-X developer experience.
+
+\subsection{What Fablo does today and why it is the right foundation}
+
+Fablo (FAbric LOcal) has established itself as a critical tool within the Hyperledger Fabric ecosystem for rapidly provisioning local development, CI, and experimentation networks from a single, declarative configuration file (\texttt{fablo-config.json}). Its core strengths, as observed in \texttt{research\_output/phase4\_fablo.md} and \texttt{tasks.md}, include:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Simplified Configuration}: Fablo abstracts away much of the underlying Docker Compose or Kubernetes complexity, allowing users to define a network in terms of organizations, peers, orderers, channels, and chaincodes.
+    \item \textbf{Automated Generation}: It automates the generation of Docker Compose files, crypto material, connection profiles, and helper scripts required to bootstrap and manage a Fabric network.
+    \item \textbf{Lifecycle Management}: Fablo provides a unified command-line interface (\texttt{fablo up}, \texttt{fablo down}, \texttt{fablo status}, \texttt{fablo reset}) for the full lifecycle of a local network, significantly reducing operational overhead.
+    \item \textbf{Reproducibility}: By generating network artifacts from a single configuration, Fablo ensures that development and testing environments are consistent and easily reproducible.
+    \item \textbf{Extensibility via Templates}: Its architecture leverages EJS templates for generating various configuration files, making it adaptable to different Fabric versions and configurations.
+\end{itemize}
+This proven capability in transforming a high-level intent into a runnable local Fabric environment makes Fablo the ideal foundation for integrating Fabric-X. The goal is to extend Fablo's declarative approach to Fabric-X, providing the same frictionless developer experience for its decomposed architecture. By building on Fablo, we can leverage its existing parsing, extension, and templating pipeline, as well as its established user base and community, to lower the barrier to entry for Fabric-X adoption.
+
+\subsection{Why the integration is non-trivial}
+
+Integrating Fabric-X into Fablo is non-trivial due to fundamental architectural differences between classic Hyperledger Fabric and Fabric-X, which present a significant mismatch with Fablo's current internal models and abstractions. The research conducted across the \texttt{fabric-x-ansible-collection}, \texttt{fabric-x-orderer}, \texttt{fabric-x-samples}, and \texttt{fablo} repositories (\texttt{research\_output/phase1\_ansible.md}, \texttt{research\_output/phase2\_orderer.md}, \texttt{research\_output/phase7\_sample\_analysis.md}, \texttt{research\_output/phase4\_fablo.md}) highlights several key challenges:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Decomposed Architecture}: Unlike classic Fabric's monolithic peers and orderers, Fabric-X operates with a highly decomposed architecture. A single logical orderer group in Fabric-X comprises four distinct roles (router, batcher, consenter, assembler), and a committer organization consists of five service roles (validator, verifier, coordinator, sidecar, query service) plus a dedicated database. Fablo's current abstractions, which model orderers as a single entity and peers as the primary transactional component, are incompatible with this service explosion.
+    \item \textbf{Port and Endpoint Proliferation}: The decomposed nature means a Fabric-X network requires the allocation and management of a significantly larger number of ports and internal endpoints. Each microservice needs its own RPC and metrics ports, demanding a more sophisticated port allocation and inter-service wiring strategy than Fablo currently employs.
+    \item \textbf{Complex Bootstrap Sequence}: Fabric-X's operational readiness involves a multi-stage bootstrap process. It necessitates crypto material generation, shared network config compilation into genesis/bootstrap artifacts, precise startup ordering of interdependent services, and a post-start configuration submission phase using tools like \texttt{fxconfig} for namespace creation. This is far more involved than Fablo's existing "generate config, then \texttt{docker-compose up}" flow.
+    \item \textbf{Dedicated Tooling and Config Schemas}: Fabric-X relies on its own set of specialized tools (\texttt{arma}, \texttt{armageddon}, \texttt{fxconfig}) and native config schemas (\texttt{node/config/config.go} in \texttt{fabric-x-orderer}). Any Fablo integration must faithfully translate its declarative configuration into these specific formats and orchestrate their execution.
+    \item \textbf{Schema and Engine Dispatch Mismatch}: Fablo's core currently supports a binary engine choice (Docker or Kubernetes) and its internal config extension logic is tailored to classic Fabric topology. Introducing Fabric-X as a new network type requires either extending the existing schema and dispatch mechanisms or introducing an entirely new engine, both of which impact core Fablo components and carry regression risk for existing functionalities.
+    \item \textbf{E2E Test Paradigm Shift}: Fablo's existing end-to-end tests are peer- and chaincode-centric. Fabric-X's admin bootstrap through \texttt{fxconfig} and its distinct transaction processing model necessitate a new set of tests focused on its specific operational characteristics.
+\end{itemize}
+Therefore, a direct, naive integration is not feasible. The effort requires careful architectural consideration to bridge this gap, ensuring that Fabric-X's unique operational model is correctly represented without disrupting Fablo's established classic Fabric workflows.
+ 
+\section{Initial Questions and Research}
+
+\subsection{Initial questions}
+
+Before implementation, the main uncertainty was not whether Fabric-X could be started locally, but how it should be represented inside Fablo without breaking the existing classic-Fabric workflow. The first question was architectural: should Fabric-X support live in a separate repository, in a thin wrapper around existing samples, or as a first-class engine inside Fablo? The second question was scope: what is the smallest useful local topology that still proves real Fabric-X behavior? The third question was modeling: which repositories should be treated as the source of truth for runtime configuration, bootstrap flow, and service wiring? Those questions shaped the research sequence and explain why the initial implementation was delivered as a Proof of Concept rather than presented as the final architecture.
+
+\subsection{Initial research: Fablo codebase}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Layer} & \textbf{Finding from source reading} \\
+\hline
+Config schema & Classic configs use \texttt{\$schema}, \texttt{global}, \texttt{orgs}, \texttt{channels}, \texttt{chaincodes}, and \texttt{hooks} as defined in \texttt{src/types/FabloConfigJson.ts}. \\
+\hline
+Generation pipeline & Now uses a pluggable engine architecture. For classic Fabric, it delegates to the existing Docker-based generation via \texttt{ClassicFabricEngine}. For Fabric-X, \texttt{FabricXEngine} generates artifacts directly. \\
+\hline
+Command structure & Oclif-based CLI. Core commands (\texttt{generate}, \texttt{up}, \texttt{down}, \texttt{status}) are engine-agnostic and delegate to the appropriate \texttt{FabloEngine} implementation. \\
+\hline
+Template system & Uses EJS templates in \texttt{src/setup-docker/templates/} for generating Docker Compose files, connection profiles, CA configs, and utility scripts. \\
+\hline
+E2E test pattern & \texttt{e2e-network/docker/test-01-v3-simple.sh} builds, initializes, runs, waits for logs, performs functional checks, exercises lifecycle commands, and tears down. \\
+\hline
+Type system & \texttt{src/types/FabloConfigJson.ts} defines the configuration structure with proper TypeScript interfaces. \\
+\hline
+\end{tabularx}
+\caption{Current Fablo codebase --- confirmed architecture from source reading}
+\label{tab:fablo-analysis}
+\end{table}
+
+The current code path from user input to running containers works as follows: A user calls \texttt{fablo up fablo-config.json}, which invokes the \texttt{fablo.sh} script. This script checks if network files exist in \texttt{fablo-target/}. If not, it runs the \texttt{setup-network} command inside a Docker container, mounting the config file and target directory. The \texttt{src/setup-docker/index.ts} command parses the config, extends it with \texttt{extendConfig()}, and generates all artifacts using EJS templates. Once generated, \texttt{fablo.sh} calls the generated \texttt{fablo-target/fabric-docker.sh up} script to start the network.
+
+This Docker-based generation approach works well for classic Fabric but creates challenges for supporting different network types like Fabric-X. The monolithic \texttt{setup-docker/index.ts} contains logic specific to classic Fabric topology, making it difficult to extend for fundamentally different architectures without extensive conditional branching.
+
+\subsection{Initial research: Fabric-X architecture}
+
+My implemented PoC deliberately targets the bundled \texttt{xdev} topology because that is the smallest viable integration surface that still represents real Fabric-X behavior. The sample image in \texttt{compose-xdev.yml} already bundles database, orderer, and committer behavior behind one container command, \texttt{run db orderer committer}. This table, however, describes the individual decomposed components that make up the full Fabric-X architecture, as confirmed by deeper analysis of the Fabric-X repository and sample configurations. This is enough to prove engine architecture, lifecycle delegation, template rendering, default port handling, and schema-first detection without taking on the full burden of a decomposed multi-service topology on day one.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Component} & \textbf{Role and config surface} \\
+\hline
+Arma Orderer & The README describes an orderer stack made of routers, batchers, consenters, and assemblers. In the Ansible inventory, routers expose ports such as \texttt{7050}, \texttt{7150}, \texttt{7250}, and \texttt{7350}; batchers, consenters, and assemblers use adjacent ports. \\
+\hline
+Endorser & In the current PoC schema, endorser is an FSC node role. It receives a generated \texttt{core.yaml} with node identity, P2P endpoint, routing references, Fabric-X driver settings, and token namespace wiring. \\
+\hline
+Validator-Committer & The Ansible inventory models the validator as its own committer component with \texttt{committer\_component\_type: validator} and an RPC port such as \texttt{5100}. It represents the validation and commitment half of the decomposed commit path. \\
+\hline
+Sidecar & The sidecar is the Fabric-facing entry point for FSC nodes. The xdev sample configures it with orderer identity variables and a public port \texttt{4001}. The current engine points node \texttt{peers} entries at \texttt{localhost:\{sidecar\}}. \\
+\hline
+Query Service & The xdev sample exposes the query service at \texttt{7001} through \texttt{SC\_QUERY\_SERVICE\_SERVER\_ENDPOINT=:7001}. The current engine waits for this port on startup and places it under \texttt{queryService} in generated node config. \\
+\hline
+Coordinator & The Ansible inventory models a separate \texttt{coordinator} component with its own RPC port, such as \texttt{5300}, and the xdev sample exposes a dedicated logging level variable for it. \\
+\hline
+Verifier & The verifier is also a distinct committer component in the inventory, typically with its own RPC port, such as \texttt{5200}. The xdev sample exposes \texttt{SC\_VERIFIER\_LOGGING\_LEVEL}. \\
+\hline
+PostgreSQL & The bundled xdev sample exposes PostgreSQL on \texttt{5433}. The decomposed inventory models it separately as \texttt{committer-db} with user, password, database name, and a different port (\texttt{5435}) in that topology. \\
+\hline
+\end{tabularx}
+\caption{Fabric-X decomposed components --- confirmed from fabric-x-repo}
+\label{tab:fabricx-components}
+\end{table}
+
+At the same time, the local repository makes it clear that \texttt{xdev} is only a starting point. The Ansible inventory proves that Fabric-X's natural topology is decomposed, multi-process, and potentially multi-organization. The \texttt{tools/fxconfig} tree and its integration tests (\texttt{single\_org\_test.go} and \texttt{multi\_org\_test.go}) also show that configuration assembly and namespace lifecycle are already serious enough to justify dedicated tooling. That is why I frame the PoC honestly: it is a local bootstrap path for the bundled developer topology, not the full end-state of Fabric-X operations.
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.88\textwidth}{\centering\vspace{2.5cm}
+\textit{[DIAGRAM PLACEHOLDER: Classic Fabric (peer + orderer + CA per org)
+vs.\ Fabric-X decomposed architecture (Arma orderer, endorser, validator-committer,
+sidecar, query service, coordinator, verifier)]}
+\vspace{2.5cm}}}
+\caption{Classic Hyperledger Fabric vs.\ Fabric-X decomposed architecture}
+\label{fig:arch-comparison}
+\end{figure}
+
+\section{Proof of Concept (PoC): Initial Implementation}
+
+\subsection{Why the initial implementation is a PoC}
+
+The initial implementation should be understood as a Proof of Concept. Its purpose is not to claim that Fablo already models the full Fabric-X runtime. Its purpose is to prove three narrower but essential points: first, that Fablo can support multiple network types without breaking the classic path; second, that Fabric-X support can be selected cleanly by schema rather than by command forks; and third, that a user can go from a single config file to a working local Fabric-X bootstrap flow with standard Fablo commands. This is the right first milestone because the full Fabric-X deployment model is substantially more complex than the bundled developer topology.
+
+That complexity is visible in the source repositories themselves. The orderer is decomposed into four Arma roles. The committer is decomposed into validator-committer, verifier, coordinator, sidecar, query service, and database. The FSC application nodes consume that infrastructure through sidecar, query, and notification endpoints. A PoC was therefore the correct initial deliverable: it proves the engine seam and the lifecycle without pretending that one local test-node container is already the final architecture.
+
+\subsection{What the PoC implements}
+
+The implemented PoC introduces a pluggable engine boundary inside Fablo and uses it to add an experimental Fabric-X path. Engine selection is schema-first: classic Fabric configs continue to use the existing path, while Fabric-X configs are identified by \texttt{fabricx-schema-v1.json}. This keeps the command surface stable. The user still works through familiar lifecycle commands, but the Fabric-X-specific behavior is isolated inside \texttt{src/engines/fabricx/}.
+
+Within that boundary, the PoC supports the bundled \texttt{xdev}-style local topology based on the FSC test-node pattern. It validates the Fabric-X config, generates the minimum configuration artifacts required for local bootstrap, produces crypto material and a genesis block through Dockerized tooling, starts the Fabric-X committer test-node container with the correct mounts and environment variables, and then bootstraps the namespace through \texttt{fxconfig}. In other words, the PoC already proves the full local user loop:
+\begin{center}
+\texttt{init \(\rightarrow\) generate \(\rightarrow\) up \(\rightarrow\) namespace visible \(\rightarrow\) status \(\rightarrow\) down}
+\end{center}
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=PoC deliverables already implemented,
+  fonttitle=\bfseries, arc=4pt]
+\begin{itemize}[leftmargin=*]
+  \item pluggable \texttt{FabloEngine} architecture
+  \item schema-first Fabric-X engine detection via \texttt{\$schema}
+  \item \texttt{fablo init --fabricx} sample config generation
+  \item Dockerized crypto and genesis-block generation
+  \item FSC-style bundled committer test-node startup
+  \item automatic namespace bootstrap through \texttt{fxconfig}
+  \item working lifecycle commands: \texttt{generate}, \texttt{up}, \texttt{down}, \texttt{status}
+  \item automated happy-path e2e verification
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Current PoC scope}
+
+The current Fabric-X config is intentionally narrow because it is designed for the PoC, not for the final architecture. It captures the information needed to run the bundled local topology cleanly: schema identity, channel information, namespace, a small infrastructure block for images and ports, and the participating organization information needed for MSP and namespace bootstrap. This keeps the config teachable while still exercising the most important lifecycle steps.
+
+The generated output is equally focused. The PoC produces the Docker Compose file for the bundled infrastructure container, the supporting crypto and genesis artifacts, and the engine state required by lifecycle commands. It does not yet try to generate a full decomposed orderer-and-committer cluster, because that would blur the distinction between the PoC and the final design. That distinction needs to stay explicit throughout the proposal.
+
+\subsection{What the PoC proves and what it does not}
+
+The PoC proves that the engine architecture is viable, that Fabric-X can be integrated into Fablo without contaminating the classic path, and that the local bootstrap flow can be automated rather than left as a collection of manual sample steps. What it does not prove is that the current bundled topology is the final representation of Fabric-X in Fablo. The final implementation still needs a richer config model, decomposed service templates, a fuller crypto pipeline, contract integration, and stricter lifecycle handling. That work is described in the next section and should be read as the destination that builds on the PoC rather than contradicting it.
+
+\section{Roadmap from PoC to Final Implementation}
+
+\subsection{Phase plan and milestone table}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|c|p{3.2cm}|X|}
+\hline
+\textbf{Dates} & \textbf{Phase} & \textbf{Deliverables} \\
+\hline
+June 01--June 14 & Onboarding & Finalize the design proposal upstream, set up the local development environment, confirm PR review expectations with mentors, and rehearse the existing build and e2e harness so new Fabric-X work lands in the same workflow as classic Fablo changes. \\
+\hline
+June 15--July 31 & Phase 1: Implement Pluggable Engine Architecture & Create the \texttt{FabloEngine} interface and engine loader system; implement schema-first engine detection; develop the \texttt{ClassicFabricEngine} wrapper for existing Docker-based generation; create the \texttt{FabricXEngine} with AJV validation against \texttt{fabricx-schema-v1.json}; implement EJS templates for Fabric-X Docker Compose and configuration files; add \texttt{fablo init --fabricx} command; ensure backward compatibility with existing classic Fabric workflows. \\
+\hline
+August 01--August 23 & Phase 2: Lifecycle and Local Bootstrap & Wire up \texttt{fablo up}, \texttt{fablo down}, and \texttt{fablo status} against generated Fabric-X artifacts; finalize standard port polling, TLS handling, and precondition checks; and harden \texttt{e2e-network/fabricx/test-01-fabricx-simple.sh} so it validates the Docker Compose stack starts and tears down correctly, mirroring the existing \texttt{test-01-simple.sh} style E2E testing patterns. \\
+\hline
+August 24--August 31 & Midterm Evaluation & Deliver a working, mergeable PR that demonstrates the pluggable engine architecture with Fabric-X support for the bundled \texttt{xdev} topology, including schema validation, generated Docker assets, lifecycle commands, and automated e2e tests. \\
+\hline
+September 01--October 15 & Phase 3: The Crypto Pipeline and Routing & Replace copied sample crypto with dynamic generation orchestrated from Docker utility containers, generate token namespace parameters with \texttt{tokengen}, formalize orderer identity inputs and outputs, and deepen the generated routing layer so node and sidecar connectivity are driven directly from the Fabric-X config model. \\
+\hline
+October 16--November 14 & Phase 4: Multi-Service Topology and Hardening & Introduce \texttt{topology: decomposed} support for separate orderer, endorser, committer-family, and query-service containers; add stricter reset semantics and CCaaS-aware cleanup; and finish contributor documentation, user guides, and architectural decision records. \\
+\hline
+November 15--November 30 & Final Evaluation & Reserve buffer for final upstream review and integration work. Only if the prior phases are fully merged, use this period for stretch goals such as CI integration examples or Fablo UI exposure for Fabric-X networks. \\
+\hline
+\end{tabularx}
+\caption{Official LFX timeline mapped to project milestones}
+\label{tab:timeline}
+\end{table}
+
+This roadmap should be read as the path from the implemented PoC to a production-representative Fabric-X integration. The engine split and bundled local bootstrap are already proven. The remaining phases extend that foundation toward richer crypto generation, decomposed topology support, lifecycle hardening, and contributor-facing documentation.
+
+\subsection{Gantt placeholder}
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.88\textwidth}{\centering\vspace{2.5cm}
+\textit{[DIAGRAM PLACEHOLDER: Gantt chart --- June through November timeline
+showing phases, milestones, and dependencies]}
+\vspace{2.5cm}}}
+\caption{Project Gantt chart}
+\label{fig:gantt}
+\end{figure}
+
+The dependency structure behind the timeline is simple and defensible. Schema design depends on settled engine boundaries. Reliable lifecycle commands depend on stable generated artifacts. Docker-orchestrated crypto generation depends on understanding the existing Fabric-X sample toolchain. Decomposed topology support depends on first proving the engine model against \texttt{xdev}. Documentation and community adoption depend on all of the above.
+
+\section{Final Implementation}
+
+\subsection{What Full Integration Means}
+
+Classic Fablo takes a compact configuration describing organizations, peers, orderers, channels, and chaincodes, runs that configuration through \texttt{extendConfig()}, and emits a complete runnable network. Full Fabric-X integration means reaching the same user contract for a very different runtime model: the user declares orderer groups, committer services, FSC nodes, namespaces, and contracts in one JSON file, and \texttt{fablo generate} produces the Docker Compose topology, per-service configuration, crypto material, genesis block, and bootstrap helpers required to run that network locally. The current bundled \texttt{xdev} topology is therefore the on-ramp, not the destination. It proves that the new engine boundary works; the long-term objective is a Fabric-X path that is as declarative and self-contained as classic Fablo.
+
+The source repositories make that destination concrete. The Arma orderer repository defines four executable roles, \texttt{router}, \texttt{batcher}, \texttt{consensus}, and \texttt{assembler}, each started as \texttt{arma <role> --config node\_config.yaml}. The Fabric-X samples and Ansible inventories show the committer as a decomposed cluster of validator-committer, verifier, coordinator, sidecar, query service, and database. The FSC repository then shows how application nodes consume that infrastructure through sidecar, query, and notification endpoints. Full integration means Fablo must generate the whole graph, not just a single convenience container.
+
+\subsection{The Config Model: \texttt{extendFabricXConfig()}}
+
+The natural analogue to classic Fablo's \texttt{extendConfig()} is a dedicated \texttt{extendFabricXConfig()} pass. The raw Fabric-X config should remain compact and intent-focused. The extension pass computes the derived information that templates need so that the EJS layer stays simple and mostly branch-free. This is exactly how classic Fablo works today: the user does not hand-author internal addresses, image tags, or every port binding. The generator computes those once and then renders deterministic output.
+
+There are three categories of derived state that matter most. First is image resolution. Classic Fablo uses \texttt{extendGlobal()} to map one \texttt{fabricVersion} to a tested set of Fabric images. Fabric-X cannot yet do that safely because the relevant components evolve on separate cadences: the orderer, committer, tools image, and database all have independent versioning. The PoC therefore keeps images explicit. The final implementation should still preserve the same abstraction boundary by letting \texttt{extendFabricXConfig()} map a future \texttt{fabricxVersion} profile to a tested image set, while still supporting explicit overrides when upstream release cadences drift.
+
+Second is port allocation. Classic Fablo derives peer and orderer port ranges by walking org and instance indexes. Fabric-X needs the same determinism, but across a larger service surface. Even a single local network may need ports for router, batcher, consenter, assembler, sidecar, query service, validator-committer, verifier, coordinator, database, and multiple FSC node APIs and P2P listeners. The important point is not any one number. It is that users should declare topology, not manually wire every host-side port relationship. \texttt{extendFabricXConfig()} should own that translation.
+
+Third, and most important, is inter-service wiring. In the decomposed architecture, the orderer roles are not independent containers that can be rendered in isolation. Routers need batcher shard endpoints. Assemblers need batcher and consenter addresses. The committer coordinator needs verifier and validator-committer addresses. Sidecars need assembler addresses. FSC nodes need sidecar, query service, and eventually notification service endpoints. Those relationships are exactly the kind of glue logic that should be derived once inside the extension pass rather than repeated in templates or exposed as user burden.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Planned Fabric-X extended config contract,
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=typescript, basicstyle=\ttfamily\small]
+export interface FabricXExtendedConfig {
+  topology: "xdev" | "decomposed";
+  images: {
+    orderer: string;
+    committer: string;
+    tools: string;
+    postgres: string;
+  };
+  channel: {
+    name: string;
+    profile: string;
+    namespace: string;
+    policy: string;
+  };
+  ordererOrgs: Array<{
+    name: string;
+    domain: string;
+    groupId: number;
+    router: { address: string; rpcPort: number; metricsPort: number; };
+    batcher: { address: string; rpcPort: number; metricsPort: number; shardId: number; };
+    consensus: { address: string; rpcPort: number; metricsPort: number; };
+    assembler: { address: string; rpcPort: number; metricsPort: number; };
+  }>;
+  committer: {
+    database: { type: "postgres" | "yugabyte"; host: string; port: number; };
+    validator: { address: string; rpcPort: number; metricsPort: number; };
+    verifier: { address: string; rpcPort: number; metricsPort: number; };
+    coordinator: { address: string; rpcPort: number; metricsPort: number; };
+    sidecar: { address: string; rpcPort: number; metricsPort: number; };
+    queryService: { address: string; rpcPort: number; metricsPort: number; };
+  };
+  nodes: Array<{
+    id: string;
+    role: "issuer" | "endorser" | "owner";
+    organization: string;
+    apiPort: number;
+    p2pPort: number;
+    sidecarAddress: string;
+    queryAddress: string;
+  }>;
+}
+\end{lstlisting}
+\end{tcolorbox}
+
+The corresponding v2 schema should make the decomposed topology explicit rather than trying to hide it behind overloaded PoC fields:
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Planned v2 Fabric-X config (illustrative),
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=json, basicstyle=\ttfamily\footnotesize]
+{
+  "$schema": "https://fablo.io/schemas/fabricx-schema-v2.json",
+  "global": { "fabricVersion": "x", "tls": false },
+  "fabricx": {
+    "topology": "decomposed",
+    "channel": {
+      "name": "arma",
+      "namespace": "token_namespace",
+      "policy": "AND('Org1MSP.member')"
+    },
+    "ordererOrgs": [
+      {
+        "name": "OrdererOrg1",
+        "domain": "ordererorg1.example.com",
+        "groupId": 1,
+        "router": { "rpcPort": 7050, "metricsPort": 7060 },
+        "consensus": { "rpcPort": 7051, "metricsPort": 7061 },
+        "assembler": { "rpcPort": 7052, "metricsPort": 7062 },
+        "batcher": { "rpcPort": 7053, "metricsPort": 7063, "shardId": 1 }
+      }
+    ],
+    "committer": {
+      "database": { "type": "postgres", "port": 5150 },
+      "validator": { "rpcPort": 5100, "metricsPort": 5200 },
+      "verifier": { "rpcPort": 5110, "metricsPort": 5210 },
+      "coordinator": { "rpcPort": 5120, "metricsPort": 5220 },
+      "sidecar": { "rpcPort": 5130, "metricsPort": 5230 },
+      "queryService": { "rpcPort": 5140, "metricsPort": 5240 }
+    },
+    "nodes": [
+      { "id": "issuer", "role": "issuer", "organization": "Org1" },
+      { "id": "endorser1", "role": "endorser", "organization": "Org1" },
+      { "id": "owner1", "role": "owner", "organization": "Org1" }
+    ]
+  }
+}
+\end{lstlisting}
+\end{tcolorbox}
+
+This is the critical architectural point: the engine interface does not need to change for any of this. The work is concentrated in the Fabric-X extension pass and the templates it feeds, exactly as classic Fablo concentrates classic-Fabric topology expansion inside \texttt{extendConfig()} and the render pipeline.
+
+\subsection{The Template Set}
+
+The template strategy for full Fabric-X support should mirror the structure that already makes classic Fablo maintainable: one master Compose template, one service-config template per role, and a clear split between derived config and rendered artifacts. The Ansible collection is the best source of truth for these per-role config files because it already ships authoritative Jinja2 templates for \texttt{config-router.yaml}, \texttt{config-batcher.yaml}, \texttt{config-consensus.yaml}, \texttt{config-assembler.yaml}, \texttt{config-validator.yaml}, \texttt{config-verifier.yaml}, \texttt{config-coordinator.yaml}, \texttt{config-sidecar.yaml}, and \texttt{config-query-service.yaml}. Those Jinja2 variables map directly to an EJS context produced by \texttt{extendFabricXConfig()}.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Planned Fabric-X template tree,
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language={}, basicstyle=\ttfamily\footnotesize]
+src/engines/fabricx/templates/
+├── docker-compose.fabricx.yaml.ejs
+├── orderer/
+│   ├── config-router.yaml.ejs
+│   ├── config-batcher.yaml.ejs
+│   ├── config-consensus.yaml.ejs
+│   └── config-assembler.yaml.ejs
+├── committer/
+│   ├── config-validator.yaml.ejs
+│   ├── config-verifier.yaml.ejs
+│   ├── config-coordinator.yaml.ejs
+│   ├── config-sidecar.yaml.ejs
+│   └── config-query-service.yaml.ejs
+├── fsc/
+│   ├── core.yaml.ejs
+│   └── routing-config.yaml.ejs
+└── scripts/
+    ├── bootstrap.sh.ejs
+    └── reset.sh.ejs
+\end{lstlisting}
+\end{tcolorbox}
+
+The master compose template should then iterate the same way classic Fablo iterates orgs and peers today. Instead of walking \texttt{orgs[].peers[]}, it walks \texttt{ordererOrgs[]} and emits four orderer-role service blocks for each group, then emits the committer-family services and any application nodes declared by the user. In other words, the implementation pattern remains recognizably Fablo even though the runtime model is different.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Master Fabric-X compose iteration (illustrative),
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=ejs, basicstyle=\ttfamily\footnotesize]
+services:
+<% ordererOrgs.forEach((org) => { %>
+  <%- include("orderer/router-service", { org }) %>
+  <%- include("orderer/batcher-service", { org }) %>
+  <%- include("orderer/consensus-service", { org }) %>
+  <%- include("orderer/assembler-service", { org }) %>
+<% }) %>
+  <%- include("committer/database-service", { committer }) %>
+  <%- include("committer/validator-service", { committer }) %>
+  <%- include("committer/verifier-service", { committer }) %>
+  <%- include("committer/coordinator-service", { committer }) %>
+  <%- include("committer/sidecar-service", { committer }) %>
+  <%- include("committer/query-service", { committer }) %>
+\end{lstlisting}
+\end{tcolorbox}
+
+The startup order also has to be rendered deliberately. The research across the Ansible roles, samples, and FSC integration code all points to the same dependency chain: the database must be healthy first, then the orderer subsystem, then the committer services that consume it, and finally the FSC nodes that depend on sidecar and query endpoints. In Compose terms, the important order is database $\rightarrow$ orderer roles $\rightarrow$ validator/verifier/coordinator $\rightarrow$ sidecar/query service $\rightarrow$ FSC application nodes. That is the point where the Ansible templates and the FSC integration tests become valuable not just as examples, but as correctness references for environment variables, health checks, and mounts.
+
+\subsection{Crypto Pipeline}
+
+The PoC already moved one important step in the right direction by generating crypto material and a genesis block through Dockerized tooling instead of expecting manual host setup. Full Fabric-X integration has to carry that idea further until all local bootstrap artifacts are produced automatically. The best reference here is not a single README paragraph. It is the executable sample script \texttt{fabric-x-samples/tokens/scripts/gen\_crypto.sh}, because it shows the real identity flow Fabric-X expects: start a Fabric CA, enroll a CA admin, register and enroll owner identities with Idemix, enroll TLS identities for FSC nodes, and then generate token parameters with \texttt{tokengen}.
+
+That leads naturally to a three-stage pipeline. Stage one generates the classic Fabric MSP and TLS tree required for orderer compatibility and genesis construction. Stage two uses Fabric CA enrollment to issue FSC node certificates and owner wallets. Stage three runs \texttt{tokengen} to produce the namespace parameters consumed by token-enabled application nodes. Each stage should be executed through short-lived Docker containers so that the user still only needs Docker and Node.js, which preserves the central Fablo promise.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Planned crypto generation contract,
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=typescript, basicstyle=\ttfamily\small]
+export interface FabricXCryptoOutputs {
+  genesisBlockPath: string;
+  ordererMspDirs: Record<string, string>;
+  nodeMspDirs: Record<string, string>;
+  nodeTlsDirs: Record<string, string>;
+  ownerWalletDirs: Record<string, string>;
+  namespaceParametersDir: string;
+}
+
+export interface FabricXCryptoGenerator {
+  generate(config: FabricXExtendedConfig, targetDir: string): Promise<FabricXCryptoOutputs>;
+  validate(outputs: FabricXCryptoOutputs): Promise<void>;
+}
+\end{lstlisting}
+\end{tcolorbox}
+
+The advantage of expressing this as an internal generator contract is that it keeps the complexity contained. The command layer still sees only \texttt{generate()}. The Fabric-X engine is free to evolve from today's simpler genesis-and-MSP bootstrap into a fuller CA- and token-aware pipeline without destabilizing classic Fabric code paths.
+
+\subsection{CCaaS and Contract Integration}
+
+A full Fabric-X path that only boots infrastructure is incomplete. Classic Fablo's practical value comes from describing not only the network, but also the contracts attached to it. Fabric-X needs the same capability in its own terms. The relevant analogue is a \texttt{chaincodes} section that tells the engine which contract services should be started, where their source lives, and which endorser-side endpoint should consume them. This aligns with both the existing classic Fablo mental model and the Fabric-X sample topology, where the endorser role is application-relevant rather than incidental.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Planned Fabric-X contract config,
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=json, basicstyle=\ttfamily\footnotesize]
+{
+  "fabricx": {
+    "chaincodes": [
+      {
+        "name": "tokencc",
+        "lang": "ccaas",
+        "directory": "./chaincodes/tokencc",
+        "endpoint": "tokencc:9999",
+        "endorser": "endorser1"
+      }
+    ]
+  }
+}
+\end{lstlisting}
+\end{tcolorbox}
+
+Once that exists, Fablo can generate the corresponding CCaaS service blocks, volumes, and helper commands in the same way it already does for classic Fabric. This matters because the target user experience is not ``a network that technically starts.'' It is ``a network a developer can actually use to run and test a contract.''
+
+\subsection{Lifecycle Hardening}
+
+The bundled PoC path is intentionally lightweight, but the full implementation has to take lifecycle management more seriously. In classic Fablo, a reset is mostly about stopping containers and clearing generated network state. In Fabric-X, there is a larger state surface: generated per-role service configs, generated crypto material, namespace artifacts, database state, and the Fabric-X engine state file that records what was rendered. A plain \texttt{docker compose down} is therefore not a sufficient definition of reset.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Planned Fabric-X reset flow,
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=typescript, basicstyle=\ttfamily\small]
+async reset(targetDir?: string): Promise<void> {
+  const dir = resolveTargetDir(targetDir);
+  const composeFile = path.join(dir, "docker-compose.fabricx.yaml");
+
+  if (await fs.pathExists(composeFile)) {
+    await runDockerCompose(dir, ["down", "-v", "--remove-orphans"]);
+  }
+
+  await fs.remove(path.join(dir, "services"));
+  await fs.remove(path.join(dir, "input"));
+  await fs.remove(path.join(dir, "fxconfig"));
+  await fs.remove(path.join(dir, "fabricx-engine-state.json"));
+}
+\end{lstlisting}
+\end{tcolorbox}
+
+The same hardening logic applies to helper commands. In classic Fablo, channel helpers are part of the user contract because channels are a first-class lifecycle concern. In Fabric-X, the equivalent surface is \texttt{fxconfig}. Namespace creation, namespace listing, and later namespace update operations should be exposed as first-class helper flows once the decomposed engine is stable enough. That keeps the conceptual model coherent: classic Fabric gets channel-aware tooling; Fabric-X gets namespace-aware tooling.
+
+\subsection{Testing Strategy}
+
+The test strategy should grow from the exact style Fablo already uses rather than inventing a parallel harness. The current Fabric-X happy-path test already proves the bundled topology can be initialized, generated, started, queried, and torn down. The final implementation plan is to extend that into a small but meaningful matrix of scenarios that exercise the engine at the right seams:
+\begin{itemize}[leftmargin=*]
+  \item generation-only validation: schema accepted, artifacts rendered, config files present
+  \item happy-path \texttt{xdev} lifecycle: init $\rightarrow$ generate $\rightarrow$ up $\rightarrow$ namespace visible $\rightarrow$ status $\rightarrow$ down
+  \item missing-artifact failure: clear error when a required generated file is absent or corrupt
+  \item config validation failure: invalid topology rejected before generation begins
+  \item decomposed topology bootstrap: one minimal decomposed network starts and reaches committer and query readiness
+\end{itemize}
+
+All of these tests should follow the existing \texttt{test-01-v3-simple.sh} discipline: create a temp workspace, build, run one focused scenario, assert on concrete artifacts and service health, and clean up. That matters because the most valuable thing Fablo can offer Fabric-X is not just code generation. It is a predictable, reviewable developer workflow that maintainers can trust not to regress silently.
+
+\subsection{Documentation Deliverables}
+
+The project description is not only asking for working code. It is also asking for a contribution that other users and maintainers can understand, extend, and review without reconstructing the design from commit history. For that reason, documentation is a first-class deliverable rather than cleanup work deferred to the end. The documentation plan has four concrete outputs.
+
+First, I will maintain a user-facing \texttt{FABRICX.md} guide in the Fablo repository. This document will explain the Fabric-X config shape, the supported local workflow, the meaning of the generated target directory, the expected Docker prerequisites, and the lifecycle commands required to generate, start, inspect, and tear down a Fabric-X network. For the PoC, it will document the bundled \texttt{xdev} path exactly as implemented. As the decomposed topology lands, the same guide will expand to explain the richer schema and service model instead of forcing users to read source code or proposal text.
+
+Second, I will write architecture decision records for the main design choices that shape the implementation. At minimum, these records should capture the engine split, schema-first engine detection via \texttt{\$schema}, and the decision to start with the bundled \texttt{xdev} topology instead of claiming decomposed production parity on day one. These ADRs matter because they preserve the reasoning behind the implementation boundary. Future contributors should be able to see not just what the code does, but why the project chose a pluggable engine seam rather than a wrapper or a hard fork of the classic pipeline.
+
+Third, I will add a contributor guide that explains how to add a third engine. This is the logical follow-through of the engine architecture. If the interface is a real extension seam, the repository should document how a new engine declares its schema, plugs into engine selection, implements lifecycle methods, contributes templates, and adds e2e tests without disturbing existing engines. This guide will help reviewers confirm that the engine abstraction is general rather than accidental.
+
+Finally, I will add inline code documentation on all public interfaces introduced by the work. That includes the engine contract, engine loader, shared helper utilities, and the public Fabric-X-specific types that future maintainers will extend. This level of documentation is especially important because the project crosses multiple domains: Oclif command routing, JSON schema validation, template rendering, Docker orchestration, and Fabric-X bootstrap logic. Good inline documentation reduces the risk that the Fabric-X path becomes understandable only to the original author.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Documentation deliverables,
+  fonttitle=\bfseries, arc=4pt]
+\begin{itemize}[leftmargin=*]
+  \item \texttt{FABRICX.md}: user-facing setup and lifecycle guide
+  \item Architecture decision records: engine split, schema-first detection, bundled \texttt{xdev} scope choice
+  \item Contributor guide: how to add a third engine cleanly
+  \item Inline code documentation on all public interfaces and extension points
+\end{itemize}
+\end{tcolorbox}
+
+\section{Known Limitations and How They Will Be Resolved}
+
+\begin{tcolorbox}[colback=yellow!5!white, colframe=yellow!60!black,
+  title=Known PoC Limitations (all isolated inside the new engine architecture),
+  fonttitle=\bfseries, arc=4pt]
+\begin{itemize}[leftmargin=*]
+\item \textbf{Bundled \texttt{xdev} topology only.} The current engine targets the FSC-style test-node path, not the full decomposed deployment with separate router, batcher, consenter, assembler, validator, verifier, coordinator, sidecar, and query containers.
+\item \textbf{Single-org local bootstrap.} The verified path is a single-organization local network. Multi-orderer-group and multi-organization policy topologies remain future work.
+\item \textbf{TLS disabled in the current happy path.} The validated PoC follows the current FSC local-default pattern with \texttt{tls=false}. Full TLS and mTLS support for orderer, committer, and helper tooling are not yet hardened.
+\item \textbf{PostgreSQL only.} Yugabyte-backed local generation is not implemented yet.
+\item \textbf{No full CA/Idemix/\texttt{tokengen} pipeline yet.} The PoC now automates MSP and genesis generation with Dockerized tooling and bootstraps namespaces through \texttt{fxconfig}, but the richer Fabric-CA-based owner and FSC-node enrollment flow shown in \texttt{gen\_crypto.sh} is still part of the final-implementation work.
+\item \textbf{Docker Compose only.} Kubernetes and OpenShift manifests are not generated.
+\end{itemize}
+All of these limitations are confined to \texttt{src/engines/fabricx/} and cannot affect classic Fabric functionality.
+\end{tcolorbox}
+
+The important point is not that the PoC has limitations; all credible proofs of concept do. The important point is that each limitation is already isolated and explained. The engine split ensures that classic Fabric behavior remains unaffected. I have also defined the replacement path for each shortcut directly in this proposal, which keeps the mentorship plan reviewable and lowers the risk of architectural drift.
+
+\section{Pre-Application Research}
+
+\begin{tcolorbox}[colback=green!5!white, colframe=green!60!black,
+  title=Pre-Application Research Completed, fonttitle=\bfseries, arc=4pt]
+Before writing this proposal, the following research was completed on the current Fablo codebase:
+\begin{itemize}[leftmargin=*]
+  \item Analyzed the current Docker-based generation architecture in \texttt{src/setup-docker/index.ts}, \texttt{src/commands/setup-network/index.ts}, and the EJS template system in \texttt{src/setup-docker/templates/}; identified the need for pluggable engines to support different network types.
+  \item Studied the Oclif command structure and lifecycle management through generated shell scripts; confirmed that lifecycle operations can be abstracted into engine methods.
+  \item Researched Fabric-X architecture through \texttt{fabric-x-repo/README.md}, \texttt{samples/tokens/compose-xdev.yml}, \texttt{samples/tokens/ansible/inventory/fabric-x.yaml}, and crypto generation scripts; understood the gap between bundled local topology and decomposed production topology.
+  \item Designed the pluggable engine interface and schema-first detection mechanism to enable clean extension of Fablo for Fabric-X while maintaining backward compatibility.
+  \item Identified key architectural decisions: engine interface design, schema versioning strategy, template organization, lifecycle abstraction, and backward compatibility approach.
+  \item Validated the approach through analysis of existing patterns in Fablo's codebase and alignment with Fabric-X requirements.
+\end{itemize}
+\end{tcolorbox}
+
+This pre-application work is important because it changes the proposal from speculative to evidence-based. The working PoC is not presented as final software, but it is strong proof that the architectural direction is sound and that the candidate has already navigated the difficult parts of the codebase.
+\section{Risk Register}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|p{3cm}|X|p{2cm}|}
+\hline
+\textbf{Risk} & \textbf{Mitigation strategy} & \textbf{Probability} \\
+\hline
+Fabric-X API surfaces change before stable release &
+Keep version-sensitive behavior isolated inside
+\texttt{src/engines/fabricx/}; pin images explicitly
+in the schema; the \texttt{\$schema} versioning
+strategy means a breaking upstream change requires
+a new schema version rather than patching live code. &
+Medium \\
+\hline
+Crypto generation for FSC nodes is underdocumented &
+Treat \texttt{gen\_crypto.sh} as the executable
+specification; implement the pipeline in stages with
+a validated fallback to externally supplied material
+at each stage boundary so the MVP is never blocked
+by an incomplete later stage. &
+High \\
+\hline
+Mentor review cycles slow down PR merges &
+Submit small, reviewable PRs aligned to phase
+boundaries rather than large feature branches;
+use the engine isolation to keep each PR
+self-contained and non-breaking for classic Fabric. &
+Medium \\
+\hline
+xdev topology diverges further from decomposed
+production model before Phase 3 begins &
+The schema explicitly carries a \texttt{topology}
+field; xdev and decomposed are separate code paths
+from day one, so upstream changes to the bundled
+image do not block decomposed work and vice versa. &
+Low \\
+\hline
+Stretch goals displace core hardening work &
+Stretch work begins only after the core deliverables
+checklist is fully merged; the engine boundary and
+the known limitations list are the explicit
+scope gate. &
+Medium \\
+\hline
+\end{tabularx}
+\caption{Risk register with mitigation strategies}
+\label{tab:risks}
+\end{table}
+
+Every risk above is tied to something concretely observable:
+version drift is already visible between the pinned sample
+image and the current committer Go module; crypto complexity
+is visible in \texttt{gen\_crypto.sh}; review latency is
+a known constraint of upstream open source work, not a
+hypothetical. Naming real risks makes them tractable.
+
+% ─────────────────────────────────────────────
+\section{Success Metrics}
+% ─────────────────────────────────────────────
+
+\subsection*{Core Deliverables}
+
+The following items are the minimum acceptable outcome
+for this mentorship. All must be merged and independently
+reproducible before the final evaluation.
+
+\begin{itemize}[leftmargin=2em]
+  \item[\checkmark] Design proposal accepted and merged upstream
+  \item[\checkmark] \texttt{fablo init fabricx} generates a
+        valid, schema-identified \texttt{fablo-config-fabricx.json}
+        with no \texttt{platform} field
+  \item[\checkmark] \texttt{fablo generate} produces a complete
+        \texttt{docker-compose.xdev.yaml}, \texttt{routing-config.yaml},
+        crypto material, genesis block, and per-node
+        \texttt{core.yaml} from a single config file
+  \item[\checkmark] \texttt{fablo up} / \texttt{down} /
+        \texttt{status} lifecycle works end-to-end including
+        namespace bootstrap via \texttt{fxconfig}
+  \item[\checkmark] E2E test suite passes and follows the
+        existing \texttt{test-01-v3-simple.sh} discipline
+  \item[\checkmark] \texttt{FABRICX.md} user guide, architecture
+        decision records, and contributor engine guide merged
+  \item[\checkmark] At least two community members have
+        independently run a Fabric-X network using the
+        implementation without author assistance
+\end{itemize}
+
+\subsection*{Stretch Goals}
+
+The following items begin only after every core deliverable
+above is merged. They are not commitments; they are the
+natural next layer of work if schedule permits.
+
+\begin{itemize}[leftmargin=2em]
+  \item Dynamic crypto pipeline: Fabric CA enrollment and
+        \texttt{tokengen} replacing copied sample material
+  \item Decomposed topology: separate router, batcher,
+        consenter, assembler, and committer-family containers
+        generated from a \texttt{topology: decomposed} config
+  \item Multi-org endorsement policy support with
+        multi-organization crypto generation
+  \item CI integration example showing a Fabric-X network
+        bootstrapped inside a GitHub Actions workflow
+\end{itemize}

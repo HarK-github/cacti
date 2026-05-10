@@ -1,7 +1,461 @@
-\section{Conclusion}
+\newtcolorbox{pocbox}[1]{%
+    colback=red!5!white,
+    colframe=red!75!black,
+    fonttitle=\bfseries,
+    title=#1,
+    boxsep=5pt,
+    arc=4pt,
+    boxrule=1pt,
+    left=6pt,
+    right=6pt,
+    top=6pt,
+    bottom=6pt,
+}
 
-The Hyperledger Cacti project, with its ambitious goal of enabling interoperability across diverse DLTs, stands at a critical juncture where enhancing its accessibility and maintainability will significantly accelerate its adoption and community growth. This mentorship offers a unique opportunity to directly address key areas of improvement, transforming identified pain points into clear pathways for new contributors and streamlined development for maintainers.
+% ==================== NEW PAGE FOR PROPOSAL ====================
+\newpage
 
-My proposed phased plan, grounded in meticulous pre-application research and aligned with the project's strategic cleanup initiative, targets documentation fragmentation, developer onboarding friction, technical debt reduction, and CI/CD efficiency. Through the systematic execution of these phases, I am confident that I can deliver tangible, measurable improvements that not only benefit the Cacti codebase directly but also cultivate a more welcoming and productive environment for future contributions.
+% Remove top margin for this page only
+\vspace*{-\topmargin}
+\vspace*{-\headheight}
+\vspace*{-\headsep}
+\vspace*{-\topskip}
 
-I am deeply enthusiastic about the prospect of contributing to Hyperledger Cacti and collaborating with its experienced maintainers and the wider LF Decentralized Trust community. My technical skills, commitment to open-source best practices, and proven ability to tackle complex challenges make me an ideal candidate to drive this initiative forward. I am eager to begin this journey and contribute to the continued success and growth of Hyperledger Cacti.
+% ==================== PROPOSAL HEADER WITH FULL-WIDTH BACKGROUND ====================
+\noindent
+\colorbox{primary}{%
+    \makebox[\linewidth][c]{%
+        \parbox{\paperwidth}{%
+            \vspace{0.8cm}
+            
+            % PROPOSAL heading
+            \begin{center}
+                {\Huge\bfseries\color{white} PROPOSAL}
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Divider
+            \begin{center}
+                \textcolor{white}{\rule{0.6\textwidth}{0.5pt}}
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Program and Project
+            \begin{center}
+                {\Large\bfseries\color{white} \program{}}
+            \end{center}
+            
+            \vspace{0.2cm}
+            
+            \begin{center}
+                {\large \color{white} \projecttitle}
+            \end{center}
+            
+            \vspace{0.4cm}
+            
+            % Second divider
+            \begin{center}
+                \textcolor{white}{\rule{0.8\textwidth}{0.3pt}}
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Project metadata
+            \begin{center}
+                {\color{white}\textbf{Project:}} \projecttitle
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\textbf{Mentors:}} \mentors
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\textbf{Duration:}} June to end of November 2026 (part-time, 12--15 hrs/week)
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Third divider
+            \begin{center}
+                \textcolor{white}{\rule{0.8\textwidth}{0.3pt}}
+            \end{center}
+            
+            \vspace{0.3cm}
+            
+            % Applicant info
+            \begin{center}
+                {\color{white}\textbf{\myname}}
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\mydegree}
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\href{\githuburl}{\color{white}\mygithub}}
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\mylocation}
+            \end{center}
+            
+            \begin{center}
+                {\color{white}\texttt{\myemail}}
+            \end{center}
+            
+            \vspace{0.8cm}
+        }%
+    }%
+}
+
+% Restore normal spacing after the full-width box
+\vspace{0.5cm}
+
+% ==================== INDEX / TABLE OF CONTENTS ====================
+\begin{center}
+    {\Large\bfseries\color{primary} Index / Table of Contents}
+\end{center}
+
+\vspace{0.2cm}
+\begin{center}
+    \textcolor{secondary}{\rule{0.5\textwidth}{0.3pt}}
+\end{center}
+\vspace{0.3cm}
+
+\tableofcontents
+
+\newpage
+\section{Executive Summary}
+\begin{pocbox}{Project Research and Audit Repository}
+    \textbf{You can find the detailed research, CI/CD audits, and documentation proposals for this project at:} \\
+    \url{https://github.com/hyperledger/cacti/tree/main/researches}
+    \vspace{0.2cm}
+    These documents contain the empirical data, bottleneck analysis, and strategic roadmap for the Cacti Cleanup Initiative.
+\end{pocbox}
+\vspace{0.5cm}
+
+Hyperledger Cacti stands as the definitive enterprise-grade framework for blockchain interoperability. Born from the strategic merger of Hyperledger Cactus and Weaver Lab, it provides a pluggable toolkit to link heterogeneous Distributed Ledger Technologies (DLTs) such as Fabric, Besu, Corda, and Ethereum. While this merger has created an unparalleled feature set—enabling everything from simple ledger state queries to standardized IETF SATP asset transfers—it has also inherited significant "fragmentation debt." This debt manifests as disjointed documentation, architectural silos, and inefficient infrastructure that collectively slow down innovation and discourage new contributors.
+
+The \textbf{Cacti Cleanup Initiative} is a holistic overhauling strategy designed to transform this fragmented landscape into a cohesive, high-performance contributor ecosystem. The initiative focuses on three strategic pillars: \textbf{Documentation Restructuring}, \textbf{Onboarding Excellence}, and \textbf{Infrastructure Optimization}. By reconciling legacy naming conventions, surfacing hidden architectural specs (such as the 50+ Weaver RFCs), and implementing a tiered documentation model (Levels 1, 2, and 3), we will provide users with a clear navigation path aligned with their technical intent. 
+
+Simultaneously, we will slash the "Time-to-First-Run" to 15 minutes through container-first strategies and unified quickstart guides. This project also maintains its commitment to infrastructure hardening, aiming to reduce CI feedback loops from 45 minutes to under 15 minutes via advanced parallelization and cross-job caching. This is not a mere cleanup; it is a technical synthesis intended to build the foundation for Cacti's next phase of growth as the global standard for DLT interoperation.
+
+\begin{tcolorbox}[colback=blue!5!white, colframe=blue!60!black,
+  title=Core Project Mandate, fonttitle=\bfseries, arc=4pt]
+To deliver a unified, developer-centric ecosystem for Hyperledger Cacti by:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Restructuring Documentation:} Transitioning from legacy silos to a unified, immersion-based Tiered Model.
+    \item \textbf{Streamlining Onboarding:} Slashing "Time-to-First-Run" to 15 minutes via container-first strategies.
+    \item \textbf{Optimizing Infrastructure:} Accelerating CI/CD pipelines by >60\% through persistent caching and parallelization.
+    \item \textbf{Cleaning the Codebase:} Resolving namespace debt and retiring deprecated components.
+\end{itemize}
+\end{tcolorbox}
+
+\section{The Cacti Vision: A Unified Interoperability Fabric}
+
+To overhaul Cacti effectively, one must first understand its unique value proposition. Unlike many "bridge" projects that introduce a central relay chain, Cacti prioritizes \textbf{Self-Sovereignty} and \textbf{Native Consensus}. It allows networks to remain independent while providing trust-minimized paths for interaction.
+
+My research into the project's origins and current state reveals a multi-faceted architecture:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Connector-Driven Connectivity:} Using plugins to abstract the complexity of specific DLT protocols (e.g., the Fabric connector handling MSP IDs and discovery).
+    \item \textbf{Orchestration Flexibility:} Offering both a centralized Node Server model (legacy Cactus) for straightforward API-driven workflows and a distributed Relay model (legacy Weaver) for asynchronous, peer-to-peer interoperation.
+    \item \textbf{Standards-Based Transfers:} Implementing the IETF SATP protocol to ensure that asset transfers are not just technical successes, but compliant with emerging regulatory standards.
+\end{enumerate}
+
+Cacti is effectively the "Internet Protocol (IP) Layer" for blockchains. Our goal in this overhaul is to make this layer as easy to "plug into" as a standard network cable.
+
+\section{The Problem: The High Cost of Fragmentation}
+
+The current state of Hyperledger Cacti presents a paradox: it possesses one of the most comprehensive interoperability feature sets in the industry, yet much of its value is obscured by "merger legacy." 
+
+\subsection{Documentation Fragmentation and the "Discovery Gap"}
+Documentation is the primary user interface of an open-source project. Currently, Cacti's documentation is split across multiple directories that still reflect pre-merger identities. Critical architectural specifications, such as the 50+ Weaver RFCs, are "dark matter"—extremely valuable but effectively invisible to the average user because they are buried deep within the \texttt{weaver/} subdirectory without root-level navigation. 
+
+Furthermore, "Link Rot" has set in; numerous files still point to the defunct \texttt{hyperledger/cactus} repository, leading to 404 errors that damage project credibility. This discovery gap forces users to read source code to understand basic protocols, creating a high cognitive load that discourages adoption.
+
+\subsection{Onboarding Friction: The "Heavy" Barrier}
+To build Cacti from source, a contributor currently needs JDK, Go, Foundry, Python, and Docker. While these are necessary for the full framework, they represent a massive barrier for someone who just wants to use a "Connector as a Library" (Level 1 immersion). The lack of a unified \texttt{QUICKSTART.md} means new users spend hours troubleshooting environment variables before they ever see an asset move between chains. 
+
+In the demo ecosystem (\texttt{cacti-demos}), instructions are repetitive and setup is manual. The use of unofficial Docker images (e.g., \texttt{aaugusto11/}) in core demos creates security concerns and a sense of "incompleteness" that contradicts Cacti's enterprise-grade mission.
+
+\subsection{Infrastructure Debt: The 45-Minute Feedback Loop}
+As detailed in our technical audit, the CI/CD pipeline is currently a bottleneck. A full build taking 45 minutes means a developer can only perform a few iterations per day. This delay is exacerbated by redundant linking of monorepo packages and the lack of artifact persistence across jobs. In a project as large as Cacti, an inefficient CI system is not just an inconvenience; it is a fundamental drag on innovation.
+
+\section{Technical Background and Research}
+
+\subsection{CI/CD Audit: Technical Bottleneck Analysis}
+
+Before proposing optimizations, I conducted a deep-dive audit of the 32 workflow and action files that constitute Cacti's CI system. The audit revealed that the current architecture, while modular, is constrained by a "strictly hierarchical" execution model and significant "fragmentation debt" from the Cactus-Weaver merger.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{p{3.2cm} X X p{1.6cm}}
+\toprule
+\textbf{\color{primary} Category} & \textbf{\color{primary} Audit Finding} & \textbf{\color{primary} Impact} & \textbf{\color{primary} Severity} \\
+\midrule
+Orchestration & \texttt{ci.yaml} follows a strict serial chain (\texttt{build} $\rightarrow$ \texttt{lint} $\rightarrow$ \texttt{test}). & Tests are delayed by 15--20m while waiting for unrelated linting to finish. & Critical \\
+\addlinespace
+Caching & No persistence for \texttt{node\_modules} or \texttt{.tsbuildinfo} across monorepo jobs. & 8--12m of redundant linking and compilation per PR. & Critical \\
+\addlinespace
+SATP-Hermes & Logic split across 7 workflows; Docker images rebuilt 3x during publish. & 60\% overhead in SATP PR cycles due to setup duplication. & High \\
+\addlinespace
+Weaver Tests & Hardcoded \texttt{sleep} commands (up to 100s) and duplicated network setups. & 5+ minutes of idle runner time per integration test. & High \\
+\addlinespace
+Testing Bugs & \texttt{jest-runner} action has a double-run bug when coverage is enabled. & Doubles the test execution time for all affected packages. & Medium \\
+\bottomrule
+\end{tabularx}
+\caption{Detailed technical audit of Cacti CI/CD inefficiencies}
+\label{tab:cicd-audit-detailed}
+\end{table}
+
+The audit confirms that Cacti's CI/CD "operational center of gravity" is currently weighted toward redundant setup rather than active validation. By decoupling the call chain and implementing an "Install-Once, Build-Once" strategy, we can reclaim over 60\% of the current runner usage.
+
+\subsection{Documentation Audit: Fragmentation Mapping}
+
+A systematic review of the documentation (\texttt{docs/}, \texttt{weaver/docs/}, \texttt{cacti-demos/}) reveals a "Merger Silo" effect. Information is technically complete but organizationally incoherent.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+\textbf{\color{primary} Artifact} & \textbf{\color{primary} Current State} & \textbf{\color{primary} Strategic Fix} \\
+\midrule
+Root README & Mentions merger but lacks a clear "Path Selection" guide. & Implement a \textbf{Tiered Narrative} based on immersion levels. \\
+\addlinespace
+RFCs & 50+ specs hidden in \texttt{weaver/rfcs/}. Essential for protocol engineering. & Create a unified \texttt{ARCHITECTURE.md} and \texttt{REFERENCES.md} with root-level links. \\
+\addlinespace
+Broken Links & 15+ links pointing to \texttt{hyperledger/cactus} (404). & Perform a repository-wide \textbf{Link Rot Audit} and automated fix. \\
+\addlinespace
+Terminology & "Relay" (Weaver) and "Connector" (Cactus) are poorly reconciled in text. & Complete the \texttt{terminology.md} file with a cross-project glossary. \\
+\bottomrule
+\end{tabularx}
+\caption{Documentation Audit and Strategic Fixes}
+\label{tab:doc-audit}
+\end{table}
+
+\section{Proof of Concept (PoC): Pre-Application Evidence}
+
+\subsection{What the Research Proves}
+
+The preliminary research and audits conducted for this project serve as the "Proof of Concept" (PoC) for the proposed Cleanup Initiative. These findings prove three critical points: first, that significant (60\%+) performance gains are achievable through strategic CI/CD re-architecture; second, that the documentation fragmentation is a structural issue that can be solved through a Tier-based categorization; and third, that I have already developed a deep understanding of the Cacti monorepo's dependency graph.
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Optimized CI/CD Strategy: Parallel Caching,
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=yaml, basicstyle=\ttfamily\footnotesize]
+# Example of optimized GitHub Actions caching strategy
+- name: Cache Node Modules
+  uses: actions/cache@v4
+  with:
+    path: '**/node_modules'
+    key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-node-
+
+- name: Cache Build Artifacts
+  uses: actions/cache@v4
+  with:
+    path: '**/*.tsbuildinfo'
+    key: ${{ runner.os }}-tsbuild-${{ github.sha }}
+\end{lstlisting}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black,
+  title=Proposed Unified Onboarding Structure,
+  fonttitle=\bfseries, arc=4pt]
+\begin{lstlisting}[language=markdown, basicstyle=\ttfamily\footnotesize]
+# QUICKSTART.md (Proposed)
+1. Environment: Docker only (No Java/Go required for initial demo)
+2. Command: docker compose -f cacti-demos/satp-demo.yaml up
+3. Verify: Run satp-transact.py script
+4. Next: Choose your Immersion Level (Level 1, 2, or 3)
+\end{lstlisting}
+\end{tcolorbox}
+
+\section{Project Roadmap and Phase Plan}
+
+\begin{table}[!htbp]
+\centering
+\large
+\begin{tabularx}{\textwidth}{c p{3.2cm} X}
+\toprule
+\textbf{\color{primary} Dates} & \textbf{\color{primary} Phase} & \textbf{\color{primary} Deliverables} \\
+\midrule
+June 01--June 14 & Onboarding \& Audit & Finalize repository-wide Link Rot Audit; setup dev environment; confirm Tiered Doc Strategy. \\
+\addlinespace
+June 15--July 31 & Phase 1: Infrastructure & Implement \texttt{node\_modules} and \texttt{.tsbuildinfo} caching; parallelize \texttt{ci.yaml}; optimize Weaver test setups. \\
+\addlinespace
+August 01--August 23 & Phase 2: Doc Restructuring & Unify \texttt{README-cactus.md} and root; surface RFCs; implement Level 1/2/3 navigation; fix 404 links. \\
+\addlinespace
+August 24--August 31 & Midterm Evaluation & CI runtime <20m; Unified root README; Completed cross-project terminology glossary. \\
+\addlinespace
+September 01--Oct 15 & Phase 3: Onboarding \& Demos & Create \texttt{QUICKSTART.md}; replace unofficial Docker images; standardize terminal patterns in demos. \\
+\addlinespace
+October 16--Nov 14 & Phase 4: Codebase Cleanup & Rename \texttt{cactus-test-*} to \texttt{cacti-test-*} for 10+ packages; remove personal research folders. \\
+\addlinespace
+November 15--Nov 30 & Final Evaluation & >60\% CI speedup; 15-minute quickstart verified; all 404 links resolved. \\
+\bottomrule
+\end{tabularx}
+\caption{Cacti Cleanup Initiative Roadmap}
+\label{tab:timeline}
+\end{table}
+
+\section{Full Technical Implementation}
+
+\subsection{Infrastructure: The "Fast Feedback" Pipeline}
+
+The core of the infrastructure overhaul is the move from a linear, "monolithic" approach to a decoupled, "fast feedback" pipeline. We will implement three high-impact architectural changes:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Call Chain Decoupling:} We will refactor \texttt{ci.yaml} so that \texttt{packages-workflow} and \texttt{code-quality-checks} run in parallel. Tests will trigger as soon as the base dependency install and build stages finish, rather than waiting for documentation linting or codegen checks to complete.
+    \item \textbf{Persistent Monorepo Caching:} We will implement an "Install-Once" strategy using a centralized \texttt{install-dependencies} job. This job will cache the entire \texttt{.yarn/cache} and \texttt{node\_modules} tree. Subsequent jobs will restore this cache in seconds, eliminating 3--5 minutes of setup per job. We will also enable \texttt{.tsbuildinfo} caching to allow for incremental TypeScript compilation across different CI jobs.
+    \item \textbf{Build-Once, Run-Many (Artifacts):} For complex sub-systems like Weaver, we will move away from building components from source in every integration test. A single \texttt{weaver-build} job will produce pre-built binaries (Relay, Drivers, CLI), which downstream matrix jobs will download as GitHub Action Artifacts. This reduces the setup time for each of the 12+ Weaver test suites by ~5 minutes.
+\end{enumerate}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{images/cacti-architecture-v2-integration.png}
+\caption{Proposed optimized CI/CD workflow for Cacti monorepo}
+\label{fig:cacti-optimized-ci}
+\end{figure}
+
+\subsection{Docker Orchestration: Remote Layer Caching}
+
+To address the 20-minute rebuild times of massive images like \textit{Fabric All-in-One}, we will integrate \texttt{docker/build-push-action@v5} with GitHub Actions' remote cache backends (\texttt{type=gha}). This ensures that base OS layers and static binary downloads are cached across PRs, potentially saving 25+ minutes on image-heavy runs.
+
+\subsection{Documentation Strategy: Tiered Unified Knowledge}
+
+The centerpiece of the documentation overhaul is the transition from a "Project-History" structure to a "User-Intent" structure. We will implement the \textbf{Three Levels of Immersion} throughout the MkDocs site and root README:
+
+\subsubsection{Level 1: Connector as a Library (Low Immersion)}
+This tier targets developers who need simple DLT access. 
+\begin{itemize}
+    \item \textbf{Fabric Missing Link:} We will implement a dedicated Fabric Level 1 tutorial to complement the existing Ethereum one, showing how to use the \texttt{@hyperledger/cactus-plugin-ledger-connector-fabric} package as a standalone dependency.
+    \item \textbf{Surrogate READMEs:} Each connector package will have a standardized README template that focuses exclusively on programmatic usage, hiding framework-level complexity.
+\end{itemize}
+
+\subsubsection{Level 2: API Server with Plugins (Medium Immersion)}
+Targets system integrators building microservices.
+\begin{itemize}
+    \item \textbf{OpenAPI Visibility:} We will surface the Swagger/OpenAPI endpoints for the Cacti API Server at the root of the doc site.
+    \item \textbf{Plugin Catalog:} Create a unified searchable list of all 20+ available plugins with their configuration schemas.
+\end{itemize}
+
+\subsubsection{Level 3: Full Framework (High Immersion)}
+Targets architects designing complex interoperability workflows.
+\begin{itemize}
+    \item \textbf{Protocol Unified Guides:} We will unify the documentation for SATP Hermes and Weaver Data Sharing under a single "Enterprise Interoperability" section.
+    \item \textbf{The RFC Portal:} The 50+ Weaver RFCs will be indexed in a root-level \texttt{REFERENCES.md} and cross-linked into relevant technical guides to ensure protocol specifications are always "one click away."
+\end{itemize}
+
+\subsection{Living Architecture: Architecture-as-Code}
+Existing architecture diagrams are static PNG files that are already outdated. I will lead the transition to \textbf{Mermaid.js} integration. 
+\begin{itemize}
+    \item \textbf{Versioned Visuals:} Diagrams will be stored as \texttt{.mmd} files in the repository.
+    \item \textbf{Automated Rendering:} These will be rendered natively by the MkDocs site and GitHub, ensuring that architectural changes in PRs are reflected in the visuals immediately.
+\end{itemize}
+
+\subsection{Onboarding: The 15-Minute Contributor Path}
+To solve the "Prerequisite Barrier," we will introduce a \textbf{Container-First Onboarding strategy}:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{QUICKSTART.md:} A single, root-level file that uses Docker Compose to spin up a "Hello World" SATP transfer. This allows new users to see Cacti in action before committing to a full multi-language build environment setup.
+    \item \textbf{DECISION\_GUIDE.md:} A visual flowchart helping users choose between the Cactus orchestration path and the Weaver protocol path based on their DLTs and trust assumptions.
+    \item \textbf{Standardized Demo Patterns:} I will refactor the 10+ demos in \texttt{cacti-demos/} to use a consistent "Terminal Pattern" (Terminal 1 = Gateway, Terminal 2 = Ledger, etc.) and provide a \texttt{setup.sh} script to eliminate the current "cd ../../../" duplication.
+\end{itemize}
+
+\subsection{Documentation as a Community Funnel: The Good First Issue Program}
+As synthesized in our cross-repo research (\texttt{some\_example\_repos/cacti\_onboarding\_research/00\_synthesis.md}), the most successful open-source projects (VS Code, Kubernetes, Fabric) use documentation as a primary funnel for new contributors. Cacti currently lacks a visible "on-ramp" for non-code or low-complexity code contributions. 
+
+I will implement a \textbf{Structured Contributor Funnel} by:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Curating 20+ Good First Issues:} These will specifically target the Link Rot Audit findings and small documentation gaps identified in Phase 1.
+    \item \textbf{The "First PR" Guide:} I will create a dedicated guide (\texttt{docs/contributing/your-first-pr.md}) that uses one of the documentation fixes as a walk-through example, teaching the user the Conventional Commits and DCO signing requirements in a low-stakes environment.
+    \item \textbf{Automated Quality Coaching:} I will integrate \texttt{markdownlint} and a link-checker into the CI pipeline. This ensures that new contributors receive immediate, automated feedback on their documentation PRs, reducing the manual review burden on maintainers and coaching the contributor toward Cacti's quality standards.
+\end{itemize}
+
+\subsection{Standardizing the Demo Ecosystem: The 'Golden Terminal' Pattern}
+Currently, a user evaluating Cacti might try the \texttt{supply-chain} example, which uses a specific Docker-in-Docker setup, and then try the \texttt{satp} gateway demo, which uses a completely different multi-terminal manual setup. This inconsistency is a major "Immersion Barrier."
+
+I will lead the effort to \textbf{Standardize the Demo Experience} using what I call the "Golden Terminal" pattern:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Terminal 1 (The Engine):} Reserved for the Cacti API Server or Weaver Relay.
+    \item \textbf{Terminal 2 (The Ledger):} Reserved for the Docker logs of the DLT network.
+    \item \textbf{Terminal 3 (The Actor):} Reserved for the interactive scripts or SDK calls.
+\end{enumerate}
+By refactoring all demo READMEs to follow this exact layout, and providing a unified \texttt{Makefile} at the root of \texttt{cacti-demos/}, we ensure that once a user learns how to run one demo, they have effectively learned how to run them all.
+
+\subsection{Codebase Cleanup: Technical Hygiene}
+The overhaul concludes with physical repository cleanup to signal project maturity:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Namespace Harmonization:} I will surgically rename the 10+ \texttt{cactus-test-*} packages to \texttt{cacti-test-*} to align with the new project identity.
+    \item \textbf{Trust and Security:} I will migrate all demo Docker Compose files to use official \texttt{ghcr.io/hyperledger-cacti/} images, replacing unofficial personal registries (\texttt{aaugusto11/}, \texttt{kubaya/}).
+    \item \textbf{Hygiene:} Removal of drafting folders and research notes (e.g., \texttt{HarshitK\_proposal\_drafting/}) to maintain a clean root directory.
+\end{itemize}
+
+\subsection{Governance and Knowledge Persistence: Architecture Decision Records}
+A project of Cacti's scale cannot be maintained through READMEs alone. The "Knowledge Decay" that followed the Cactus-Weaver merger was partly due to the lack of a formal record for why specific architectural choices were made (e.g., why SATP Hermes uses a specific gRPC bridge over Type 3 APIs).
+
+I will introduce the \textbf{Architecture Decision Record (ADR) Framework}:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Cacti ADR-001:} Establishing the Tiered Documentation Standard.
+    \item \textbf{Cacti ADR-002:} Standardizing the GHCR naming convention for official images.
+    \item \textbf{Cacti ADR-003:} CI/CD Fast-Feedback Strategy and Parallelization model.
+\end{itemize}
+By codifying the results of the Cacti Cleanup Initiative into versioned ADRs in the \texttt{docs/design/} folder, we ensure that the "Synthesis" achieved during this mentorship remains durable for future generations of maintainers.
+
+\section{Known Limitations and How They Will Be Resolved}
+
+\begin{tcolorbox}[colback=yellow!5!white, colframe=yellow!60!black,
+  title=Project Scope and Constraints,
+  fonttitle=\bfseries, arc=4pt]
+\begin{itemize}[leftmargin=*]
+\item \textbf{Legacy Compatibility:} We will use MkDocs-redirects to ensure that old documentation links remain functional during the restructuring.
+\item \textbf{Dependency Breaking:} All dependency consolidation will be preceded by full integration testing to ensure no functional breakage.
+\item \textbf{User Validation:} The 15-minute quickstart will be "battle-tested" with at least 3 external developers from the Hyperledger Discord before final delivery.
+\end{itemize}
+\end{tcolorbox}
+
+\section{Success Metrics: Measuring the Overhaul}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+\textbf{\color{primary} KPI} & \textbf{\color{primary} Current Baseline} & \textbf{\color{primary} Target (Week 12)} \\
+\midrule
+CI Build Time & ~45 minutes & <15 minutes \\
+Onboarding Time & 2+ hours (Heavy install) & <15 minutes (Container-first) \\
+Broken Links (404) & 15+ detected & 0 (Validated by CI check) \\
+Documentation Tiering & Siloed by legacy repo & 100\% mapped to Levels 1, 2, 3 \\
+Docker Image Trust & Unofficial images in demos & 100\% official GHCR images \\
+RFC Visibility & Hidden in subdirectory & Root-level searchable index \\
+\bottomrule
+\end{tabularx}
+\caption{Project Success Metrics and Baseline Comparison}
+\label{tab:metrics}
+\end{table}
+
+\section{Conclusion: A Resilient Cacti Ecosystem}
+
+The Cacti Cleanup Initiative is a comprehensive response to the challenges of scaling a merged open-source project. By optimizing the "operational center of gravity" (CI/CD) and the "knowledge center of gravity" (Documentation), we create a virtuous cycle: faster feedback loops lead to higher code quality, and clearer documentation leads to a larger, more confident contributor base.
+
+I am uniquely prepared for this task, having already completed a full audit of the project's documentation and infrastructure. My approach combines technical rigor (advanced caching, remote Docker layers) with a deep focus on user experience (tiered narratives, quickstart paths). Together, we will transform Hyperledger Cacti into a cohesive, production-ready interoperability powerhouse.
+
+\section{Appendix: Research Artifacts and Audit Summaries}
+
+\subsection{Research Files in Workspace}
+\begin{itemize}
+    \item \textbf{CI/CD Audit:} \texttt{researches/CI\_CD/cacti\_cicd\_final\_audit.md}
+    \item \textbf{Documentation Inventory:} \texttt{researches/Documentations/batch1\_docs\_core.txt}
+    \item \textbf{Onboarding Synthesis:} \texttt{some\_example\_repos/cacti\_onboarding\_research/00\_synthesis.md}
+\end{itemize}
+
+\subsection{Summary of Documentation Debts Discovered}
+\begin{itemize}
+    \item \textbf{dark-matter RFCs:} 50+ files in \texttt{weaver/rfcs/} with no root links.
+    \item \textbf{TBC Terminology:} \texttt{weaver/rfcs/terminology.md} contains 5+ "To Be Completed" sections.
+    \item \textbf{Image Fragmentation:} 4 different personal Docker registries used in official demos.
+    \item \textbf{Link Rot:} Root README line 12 leads to a dead project repo.
+\end{itemize}

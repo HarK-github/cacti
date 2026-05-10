@@ -1,0 +1,366 @@
+[
+  {
+    "name": "nuclei-scan",
+    "avg_duration_sec": 610.5,
+    "max_duration_sec": 615.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "asset-exchange-besu / asset-exchange-besu-local (AliceERC721)",
+    "avg_duration_sec": 377.0,
+    "max_duration_sec": 402.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "asset-exchange-besu / asset-exchange-besu-local (AliceERC1155)",
+    "avg_duration_sec": 371.6666666666667,
+    "max_duration_sec": 377.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "asset-exchange-besu / asset-exchange-besu-local (AliceERC20)",
+    "avg_duration_sec": 371.3333333333333,
+    "max_duration_sec": 379.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "Analyze (typescript)",
+    "avg_duration_sec": 160.71428571428572,
+    "max_duration_sec": 179.0,
+    "failure_rate": 0.0,
+    "count": 7
+  },
+  {
+    "name": "Dependabot",
+    "avg_duration_sec": 118.14814814814815,
+    "max_duration_sec": 288.0,
+    "failure_rate": 0.0,
+    "count": 27
+  },
+  {
+    "name": "node-pkgs / unit_test_iin_agent_local (v22.18.0)",
+    "avg_duration_sec": 83.5,
+    "max_duration_sec": 91.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "node-pkgs / unit_test_iin_agent_local (v18.18.2)",
+    "avg_duration_sec": 79.0,
+    "max_duration_sec": 81.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "node-pkgs / unit_test_weaver_node_sdk_local (v22.18.0)",
+    "avg_duration_sec": 75.0,
+    "max_duration_sec": 76.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "node-pkgs / unit_test_weaver_node_sdk_local (v18.18.2)",
+    "avg_duration_sec": 72.5,
+    "max_duration_sec": 73.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "go / unit_test_sdk",
+    "avg_duration_sec": 38.0,
+    "max_duration_sec": 38.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "asset-exchange-fabric / check_code_changed",
+    "avg_duration_sec": 17.333333333333332,
+    "max_duration_sec": 37.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "corda-interop-app / check_code_changed",
+    "avg_duration_sec": 16.333333333333332,
+    "max_duration_sec": 33.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "asset-exchange-besu / check_code_changed",
+    "avg_duration_sec": 9.333333333333334,
+    "max_duration_sec": 11.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "asset-exchange-corda / check_code_changed",
+    "avg_duration_sec": 9.0,
+    "max_duration_sec": 10.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "asset-transfer / check_code_changed",
+    "avg_duration_sec": 8.666666666666666,
+    "max_duration_sec": 10.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "data-sharing / check_code_changed",
+    "avg_duration_sec": 8.0,
+    "max_duration_sec": 10.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "docker-build / check_code_changed",
+    "avg_duration_sec": 7.666666666666667,
+    "max_duration_sec": 9.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "relay / check_code_changed",
+    "avg_duration_sec": 7.666666666666667,
+    "max_duration_sec": 9.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "fabric-fabric-satp / check_code_changed",
+    "avg_duration_sec": 7.666666666666667,
+    "max_duration_sec": 10.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "go / check_code_changed",
+    "avg_duration_sec": 7.666666666666667,
+    "max_duration_sec": 9.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "node-pkgs / check_code_changed",
+    "avg_duration_sec": 7.333333333333333,
+    "max_duration_sec": 9.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "pre-release / check_release",
+    "avg_duration_sec": 7.333333333333333,
+    "max_duration_sec": 8.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "Validate PR title",
+    "avg_duration_sec": 4.25,
+    "max_duration_sec": 6.0,
+    "failure_rate": 0.0,
+    "count": 8
+  },
+  {
+    "name": "go / debug_event_type",
+    "avg_duration_sec": 4.0,
+    "max_duration_sec": 5.0,
+    "failure_rate": 0.0,
+    "count": 3
+  },
+  {
+    "name": "docker-build / build_docker_fabric_driver_packages",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "docker-build / build_docker_corda_driver_packages",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "docker-build / build_docker_fabric_driver_local",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "docker-build / build_docker_corda_driver_local",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "docker-build / build_docker_iin_agent_local",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "docker-build / build_docker_relay",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "relay / unit_test_relay_tls",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "relay / unit_test_relay_tls_local",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "asset-exchange-besu / asset-exchange-besu",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "fabric-fabric-satp / fabric-fabric-satp-local",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "go / unit_test_satpsimpleasset",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "go / unit_test_assetmgmt",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "go / unit_test_interopcc",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "go / unit_test_simpleasset",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "go / build_test_cli",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "go / unit_test_simpleassettransfer",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "go / unit_test_simpleassetandinterop",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "asset-transfer / asset-transfer-local",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "asset-transfer / asset-transfer",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "asset-exchange-corda / asset-exchange-corda",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "asset-exchange-corda / house-token-exchange-corda",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "asset-exchange-corda / asset-exchange-corda-local",
+    "avg_duration_sec": 0.0,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "relay / unit_test_relay_local",
+    "avg_duration_sec": -0.5,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "relay / unit_test_relay",
+    "avg_duration_sec": -0.5,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "node-pkgs / build-docs",
+    "avg_duration_sec": -0.5,
+    "max_duration_sec": 0.0,
+    "failure_rate": 0.0,
+    "count": 2
+  },
+  {
+    "name": "asset-exchange-fabric / asset-exchange-fabric-local",
+    "avg_duration_sec": -1.0,
+    "max_duration_sec": -1.0,
+    "failure_rate": 0.0,
+    "count": 1
+  },
+  {
+    "name": "asset-exchange-fabric / asset-exchange-fabric",
+    "avg_duration_sec": -1.0,
+    "max_duration_sec": -1.0,
+    "failure_rate": 0.0,
+    "count": 1
+  }
+]

@@ -1,0 +1,1611 @@
+========== FILE: weaver/OVERVIEW.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Weaver: Interoperability across DLT Networks
+
+Weaver is an architectural framework with a family of protocols that enables scalable interconnectivity between independent distributed ledgers in a manner that preserves core tenets of decentralisation and security.
+
+This framework addresses the problem of fragmentation that has emerged in the past few years, especially because of the proliferation of permissioned blockchain protocols and networks of limited process scope that nonetheless need to share assets and various ledger records to drive their workflows.
+
+## Vision
+
+The scope of DLT interoperability is illustrated in the figure below. We envision any form of trustworthy information communication across ledgers, whether they belong to a single network or to multiple networks running on very different DLTs, to require a standard set of capabilities. Communication between distributed ledgers and non-DLT systems are also covered in this vision. The common feature in all these scenarios is that the ledgers are governed and maintained independently and ought to have the ability to interoperate with other ledgers or systems on-demand.
+
+<img src="./resources/images/spectrum-dlt-interop.png">
+
+The vertical layers in the above figure illustrate the typical DLT network stack, from smart contracts at the top to commitment and consensus protocols at the bottom. There are different aspects of concerns in each layer, as has been called out at the right of the figure. Operational concerns like identity management, governance, and policy, must be handled across all layers, treating networks as holistic units.
+
+The figure below illustrates our layered view of what a general-purpose interoperability framework (like Weaver) ought to handle. Like the OSI model for networking protocols, low-level communication concerns in the bottom layers give way to orchestrational and policy concerns higher up. The _semantic layer_ is the most interesting from a blockchain practitioner's perspective as it presents research and engineering challenges unique to DLTs.
+
+<img src="./resources/images/layers-use-cases.png">
+
+Toward the right of the figure, you can see functions in the semantic layer called out as distinct use cases involving some exchange of information across two networks, leading to ledger record updates in those networks. The three scenarios are:
+- Data sharing
+- Asset transfer
+- Asset exchange
+
+You can find details on these use cases (or _modes_ of interoperation) in [Interoperability Modes](https://hyperledger-cacti.github.io/cacti/weaver/interoperability-modes/).
+
+_Relay_ modules owned and managed by networks enable cross-network communications or even communications between networks and enterprises systems of record. Cross-network identity management occurs on a separate plane from the information exchanges, and our vision for this is described in [Decentralized Identity](https://hyperledger-cacti.github.io/cacti/weaver/architecture-and-design/decentralized-identity/) and [Distributed Identity Management for Interoperation](./rfcs/models/identity/network-identity-management.md).
+
+## System Design and Deployment
+
+The Weaver system consists of standardized components as well as DLT-specific components, both of which must be incorporated into a given network to make it interoperable with others. Because DLTs can be highly divergent, some of these components may look very different in different DLTs, as is illustrated in the architecture diagram below which shows a typical Hyperledger Fabric network at the left and a typical Corda network at the right, both augmented for interoperability with each other. (The components that look different still follow a standardized template and offer a similar set of capabilities, as we will show further below.)
+
+<img src="./resources/images/arch-protocol.png">
+
+In the middle, for cross-network communications, lie DLT-agnostic relays, which can have one or more DLT-specific _drivers_ to interpret requests and orchestrate response collection from the network. _Interoperation modules_ lie within the network and operate the way smart contracts for that platform natively do. Hence, in a Fabric network, these are implemented and deployed as _chaincode_ on all peers, whereas in a Corda network, they are implemented and deployed within a special _Interop Cordapp_ that can trigger flows across the network. Lastly, for applications that are already deployed on these networks to exercise interoperation capabilities, Weaver provides SDK extensions and libraries.
+
+### Example: Data Sharing Protocol Overview
+
+For a data sharing use case, the following are the functions that are performed network-wide using the interoperation modules (i.e., through consensus):
+- Access control of requests for data from another network
+- Proof of response data authenticity generated in the form of peers' digital signatures
+- Optionally, encryption of repsonse data and signatures to avoid confidentiality and integrity attacks mounted by relays
+- Verification of proofs in the response by the requesting network
+
+The basis for this protocol is a priori knowledge of counterparty networks' membership providers' certificate chains.
+
+### Architecture
+
+The Weaver components and tools are illustrated in the below architecture diagram, independent of the networks into which they are incorporated.
+
+<p align="center" width="100%">
+  <img src="./resources/images/weaver-architecture.png" width="75%">
+</p>
+
+#### Relays
+
+| Summary |
+|:------|
+| These are modules that acts as gateways to a network, both as an ingress and an egress point. A relay discovers other networks’ relays and routes messages for cross-network transactions. A relay offers an API to applications and to other relays that is not tied to a specific DLT or application implementation. |
+
+These modules act as fulcra of inter-network (or inter-ledger) discovery and communication. A relay acts as a gateway for a network, serving as both an ingress and an egress point.
+
+Relays connect clients, or applications, in one network, with the peers of another using a DLT-neutral, asynchronous, event-based, message passing protocol.
+(Presently, the protocol is stateless but we will enhance the relay in the future to support stateful fault-tolerant communication with message queueing, prioritization, and load balancing. Discovery will also be a future addition, with relays currently channelling requests and responses using other networks’ relay addresses.)
+
+A Weaver relay consists of a gRPC service and uses gRPC for communication. It offers 2 APIs:
+- To a network app/client: trigger cross-network operations
+- To other relays: cross-network requests/responses
+
+For interoperability, a network must own or access at least one relay, though multiple would be useful for redundancy and failover. A relay is trustless, as it cannot impact integrity and confidentiality for end-to-end protocols. Therefore, a relay can be supplied and maintained by the network’s consortium as a whole or just any of the constituent organizations without impacting network security. It can also be an external service.
+
+A Weaver relay can be used by any network built on any present or future DLT with the only extra effort required in customizing its configuration for communication with other network components.
+
+Currently, Weaver relays support cross-network data queries (returning a ledger state view in response to a view request). Cross-network transaction invocations and event publish/subscribe will be supported in the future.
+
+#### Drivers
+
+| Summary |
+|:------|
+| These are modules that can be “plugged into” relays that can talk specific  DLT protocols and have access to specific portions of a distributed ledger. They translate relayed messages into instructions for collecting ledger state proofs and (in the future) issuing instructions to update ledger state. |
+
+These are ledger-specific relay plug-ins, which can be activated by relays for the following purposes in a protocol:
+Translation of a DLT-neutral relay request coming from outside the network to a DLT- and ledger-specific instruction or query that can be executed within the network
+- Generating a ledger state view to return in a response.
+- In the data sharing protocol, a driver orchestrates the generation of a response and the collection of authenticity proof to satisfy the verification policy within the external request. (Presently, Weaver drivers only serve a data query purpose, but in the future, we will add capabilities for transaction invocation (block creation) and event transmission.)
+
+A driver is implemented as a typical Layer-2 app with a wallet identity for a given DLT platform (using its SDK). It must possess a network-issued client credential so it can invoke contracts, but like the relay it is coupled with, it is untrusted for integrity and confidentiality purposes. The credential can therefore be issued by the network’s consortium as a whole or by an individual constituent organization; this decision does not impact security.
+
+Drivers are implemented in Weaver for Fabric and Corda, and a Besu implementation is underway. Once implemented for a given DLT, the driver module can be reused in any network built on that DLT with minimal network-specific customizations.
+
+In our current model, a driver is deployed as a service loosely coupled with a relay, but other deployment models can be considered in the future where they are offered as extensions of relays. Depending on the nature of the wallet credential possessed by a driver, it can be used for a single ledger within the network or all the ledgers within the network or a private data collection (if the DLT platform supports these).
+
+#### Interoperation Module
+
+| Summary |
+|:------|
+| This is a set of procedures for ledger state exposure and validation and asset management in the context of cross-network operations. They are implemented and deployed as smart contracts and distributed application flows in DLT-specific ways. |
+
+This module implements the core basic network functions that any cross-network transaction is comprised of: access control, proof generation and verification, asset locks, claims, pledges, and reclaims.
+
+This module is deployed on, and its functions executed by, every network peer that is involved in a cross-network transaction. The implementation and deployment is DLT-specific and is based on the template outlined for the implementation and deployment of smart contracts and distributed applications on a particular DLT.
+- For Hyperledger Fabric networks, this module is implemented as chaincode, which is the embodiment of a smart contract in that platform.
+- For Corda networks, this module is implemented as a CorDapp, which is the embodiment of a distributed application (including contracts) on that platform.
+- For Hyperledger Besu networks (and Ethereum-based networks in general), this module is implemented as a set of Solidity contracts.
+
+The logic behind this is that the core functions for interoperation must be executed by the network as a collective (group) rather than by a trusted proxy module. And because the network’s trustworthiness is given by how it executes contracts and finalizes transactions, Weaver can guarantee that the proof and asset management functions are as trustworthy and as secure as the networks running them.
+
+Weaver defines a template function API to be implemented by every interoperation module. For a given DLT, an interoperation module must be built from scratch using this template. But once built for a particular DLT, it can be reused for any network built on that DLT’s stack.
+
+Access control and proof verification policies as well as foreign networks’ memberships and authority certificates are maintained on a networks’ ledger through consensus via these interoperation modules.
+
+#### Application Helpers
+
+| Summary |
+|:------|
+| This is a package of library functions and API for applications to use as an SDK. Offered functions can be called from suitable locations within applications’ workflows. |
+
+This is an SDK consisting of a package of library functions and an API for applications to exercise, i.e., trigger operations involved in cross-network transactions.
+
+These library functions enable distributed applications on DLT networks to be interoperation-ready with minimal adaptation. An application developer just needs to determine where in the business workflow a cross-network transaction (data sharing, asset exchange, or asset transfer) is required, and insert a suitable Weaver API function call to trigger it. The API hides the complexity of the underlying communication and commitment mechanisms.
+
+Core functions currently offered by the Weaver SDK are standardized across DLTs, though implemented in both DLT- and language-specific ways:
+Data sharing function that underneath runs a cross-network request-response protocol and commits to local ledger after proof validation.
+Asset locks, claims, and unlocks for exchanges.
+Asset pledges and redemptions for transfers.
+
+Weaver currently offers SDKs for the following DLTs:
+- In Fabric for JS/TS-based apps, built on Fabric Node SDK
+- In Fabric for Go-based apps, built on Fabric Go SDK
+- In Corda for Java/Kotlin-based apps, built on Corda SDK
+- In Besu (partial support, only for asset exchanges) for JS-based apps, built on Web3.js
+
+#### Identity Service
+
+| Summary |
+|:------|
+| This is a module that consists of both a service and an agent. The service exposes the network’s identity providers’ or certification authorities’ certificate chains for external parties. The agent syncs such certificates from external networks. |
+
+This is a service coupled with an agent that syncs membership and certificates with other networks to establish a trust basis for interoperation.
+
+The service exposes the local network’s membership, i.e., the different stakeholders (corresponding to network subdivisions or even individual peer nodes) who collectively maintain shared ledgers through consensus, and the certificate chains of the respective stakeholders identity providers’ (root and intermediate certificates), to other networks’ identity agents.
+- In a Fabric network, these consist of certificate chains of the organizations’ MSP CAs
+- In a Corda network, these consist of network and doormen CA certificates as well as individual nodes’ CA certificates.
+
+The agent syncs other networks’ memberships and certificates and records (or updates) them on its network’s ledgers (using consensus) via the deployed Weaver Interoperation Module.
+
+An identity service is necessary for a permissioned network and an identity agent is necessary whenever the counterparty network is permissioned. Without this, access control and proof verification (two core Weaver functions) cannot be performed independently and in a foolproof manner.
+
+Currently, Weaver offers reference code and instructions to launch an identity service. (Some of that code is specific  for Fabric and Corda networks.) Design specifications exist in Weaver for building a scalable solution using DIDs, public registries, and verifiable credentials, and an implementation is underway. (A PoC was built in the past for Fabric, using Indy as a candidate DID registry.)
+
+### Relays and Drivers
+
+The architecture of the relay, which we envision can be the basis of a universal DLT interoperability standard, is illustrated in the figure below. As mentioned above, there are both DLT-agnostic components as well as DLT-specific components called drivers. Relays can manage requests and responses for different interoperability modes as well as targets (other DLT networks or ERP systems).
+
+<img src="./resources/images/relay-arch.png">
+
+Because relays are additional components introduced by Weaver into a DLT network, the nature of their deployment is a matter of concern (and debate). Below, you can see three ways in which a relay can be deployed within a typical Hyperledger Fabric network, each with different trust assumptions and governance requirements.
+
+<img src="./resources/images/relay-deployment-models.png">
+
+### Protocol Building Blocks
+
+The capabilities that need to be supported within the network and in the cross-network communication modules for the three interoperability modes (data sharing, asset exchange, and asset transfer) are illustrated in the figure below.
+
+<p align="center" width="100%">
+  <img src="./resources/images/weaver-building-blocks.png" width="75%">
+</p>
+
+To support any of the Weaver protocols, the *Core Network Capabilities* must be implemented in the interoperation module for a given network and the *Relay Capabilities* must be implemented in the relay/driver combination for that network.
+
+### Design Specifications
+
+For more details on the various architectural components, building blocks, and cross-network protocols, see the [Weaver RFCs](./rfcs).
+
+## Articles
+
+1. Venkatraman Ramakrishna and Vinayaka Pandit, DLT Interoperability: Why, How, and Weaver LinkedIn blog. [Part 1](https://www.linkedin.com/pulse/dlt-interoperability-why-how-weaver-part-1-vinayaka-pandit/), [Part 2](https://www.linkedin.com/pulse/dlt-interoperability-why-how-weaver-part-2-vinayaka-pandit/) _LinkedIn_
+1. Venkatraman Ramakrishna and Vinayaka Pandit, [Making permissioned blockchains interoperable with Weaver](https://www.ibm.com/blogs/blockchain/2021/07/making-permissioned-blockchains-interoperable-with-weaver/), _Blockchain Pulse: IBM Blockchain Blog_
+1. Venkatraman Ramakrishna, [Meet Weaver, one of the new Hyperledger Labs taking on cross-chain and off-chain operations](https://www.hyperledger.org/blog/2021/06/09/meet-weaver-one-the-new-hyperledger-labs-projects-taking-on-cross-chain-and-off-chain-operations), _Hyperledger Global Forum 2021 Blog_
+1. Dileban Karunamoorthy and Ermyas Abebe, [On the Interoperability of Distributed Ledgers](https://medium.com/thinkdecentralized/on-the-interoperability-of-distributed-ledgers-15f584b79808), _Medium.com_
+
+## Presentations
+
+1. [Secure Asset Transfer Protocol](https://www.youtube.com/watch?v=st9tP1n0fg0), Thomas Hardjono, Venkatraman Ramakrishna, Martin Hargreaves, _Birds-of-a-Feather (BoF) Session, IETF 115 Meeting_, London, UK, November 10, 2022
+1. [Panel Discussion on Blockchain Interoperability with Hyperledger Cactus, Weaver, and YUI](https://www.youtube.com/watch?v=FdYCrgO9g6A), Moderator: Tracy Kuhrt, Panelists: Takuma Takeuchi, Venkatraman Ramakrishna, Susumu Toriumi, _Hyperledger Global Forum 2022_, September 13, 2022
+1. [Formalizing and Standardizing Blockchain Interoperability](https://www.youtube.com/watch?v=PMoEGHOr9-U),  Dhinakaran Vinayagamurthy and Rafael Belchior, _Hyperledger Global Forum 2022_, September 13, 2022
+1. [Making Distributed Ledgers Interoperable Using Weaver (Hyperledger Labs)](https://www.youtube.com/watch?v=Tz4ttPFgsA0), Venkatraman Ramakrishna, _Hyperledger Global Forum 2022_, September 13, 2022
+1. [Panel Discussion - All Things Cross-Chain](https://www.youtube.com/watch?v=_NmUiVsmss8), Moderator: Sophia Lopez, Panelists: Jim Zhang, Venkatraman Ramakrishna, Takeuchi Takuma, _Hyperledger Global Forum 2022_, September 12, 2022
+1. [Secure Asset Transfer Protocol](https://www.youtube.com/watch?v=lgPvjhUsERo), Thomas Hardjono, Venkatraman Ramakrishna, Martin Hargreaves, Birds-of-a-Feather (BoF) Session, IETF 114 Meeting, Philadelphia, PA, USA, July 26, 2022
+1. Working Draft: Views and View Addresses for Blockchain/DLT Interoperability, Venkatraman Ramakrishna, IETF 112 Side Meeting, November 12, 2021
+1. [Blockchain Interoperability with Hyperledger Cactus & Weaver](https://www.youtube.com/watch?v=l-nZlLK8IMM), Peter Somogyvari and Venkatraman Ramakrishna, _Hyperledger NYC Meetup_, October 14, 2021
+1. Panel discussion on Blockchain Interoperability: Moderator: Vinayaka Pandit; Panelists: Rafael Belchior, Hart Montgomery, and Venkatraman Ramakrishna, _IEEE Services 2021: Blockchain Interoperability_, September 8, 2021
+1. Blockchain Interoperability: Challenges, Ongoing Efforts, and Potential Solutions: Vinayaka Pandit, _Hyperledger Global Forum 2021_, June 9, 2021
+1. Hosted Discussion: The Future of Blockchain Interoperability: Hart Montgomery, Tracy Kuhrt, Susumu Toriumi, and Venkatraman Ramakrishna, _Hyperledger Global Forum 2021_, June 8, 2021
+
+## Peer-Reviewed Research Publications
+
+1. Bishakh Chandra Ghosh, Sikhar Patranabis, Dhinakaran Vinayagamurthy, Venkatraman Ramakrishna, Krishnasuri Narayanam, Sandip Chakraborty, [Private Certifier Intersection](https://eprint.iacr.org/2022/1302.pdf) _NDSS 2023_
+1. Krishnasuri Narayanam, Venkatraman Ramakrishna, Dhinakaran Vinayagamurthy, Sandeep Nishad, [Generalized HTLC for Cross-Chain Swapping of Multiple Assets with Co-Ownerships](https://arxiv.org/pdf/2202.12855.pdf) _AFT 2022_ 
+1. Bishakh Chandra Ghosh, Dhinakaran Vinayagamurthy, Venkatraman Ramakrishna, Krishnasuri Narayanam, Sandip Chakraborty, [Privacy-Preserving Negotiation of Common Trust Anchors Across Blockchain Networks](https://ieeexplore.ieee.org/document/9805532) _ICBC 2022_
+1. Bishakh Chandra Ghosh, Venkatraman Ramakrishna, Chander Govindarajan, Dushyant Behl, Dileban Karunamoorthy, Ermyas Abebe, Sandip Chakraborty, [Decentralized Cross-Network Identity Management for Blockchain Interoperation](https://arxiv.org/abs/2104.03277), _ICBC 2021_
+1. Ermyas Abebe, Yining Hu, Allison Irvin, Dileban Karunamoorthy, Vinayaka Pandit, Venkatraman Ramakrishna, Jiangshan Yu, [Verifiable Observation of Permissioned Ledgers](https://arxiv.org/abs/2012.07339), _ICBC 2021_
+1. Ermyas Abebe, Dushyant Behl, Chander Govindarajan, Yining Hu, Dileban Karunamoorthy, Petr Novotny, Vinayaka Pandit, Venkatraman Ramakrishna, Christian Vecchiola, [Enabling Enterprise Blockchain Interoperability with Trusted Data Transfer](https://arxiv.org/abs/1911.01064), _Middleware 2019 - Industry Track_
+
+
+========== FILE: weaver/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Weaver: DLT Interoperability
+
+<div align="center">
+
+[![Data Sharing Status](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_data-sharing.yml/badge.svg?event=push)](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_data-sharing.yml) [![Asset Transfer Status](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_asset-transfer.yml/badge.svg?event=push)](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_asset-transfer.yml)  
+[![Fabric Asset Exchange Status](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_asset-exchange-fabric.yml/badge.svg?event=push)](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_asset-exchange-fabric.yml) [![Corda Asset Exchange Status](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_asset-exchange-corda.yml/badge.svg?event=push)](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_asset-exchange-corda.yml) [![Besu Asset Exchange Status](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_asset-exchange-besu.yml/badge.svg?event=push)](https://github.com/hyperledger-cacti/cacti/actions/workflows/test_asset-exchange-besu.yml)
+
+</div>
+
+Weaver is a framework, with a family of protocols, to enable interoperation for data sharing and asset movements among independent networks built on similar or different distributed ledger technologies (DLTs) in a manner that preserves the core blockchain tenets of decentralization and security. To this end, it is built on a particular design philosophy that differentiates it from other DLT interoperability solutions in the market. This philosophy can be summarized through the following design principles or guidelines:
+- A network is self-sovereign in matters of governance and should be able to choose who, how, and when, to interoperate with.
+- Interoperation does not rely on trusted mediators. Rules and requirements are framed using the networks' internal governance mechanisms.
+- Interoperation relies minimally on shared infrastructure, which may provide identity, discovery, and routing, services but does not play a part in core cross-network transactions (which may involve request-response protocols).
+- Interoperation occurs through protocols that derive their trust from the counterparty networks' native consensus mechanisms, because any cross-network transaction method that eschews or bypasses the respective networks' consensus mechanisms will be vulnerable to failure or attack.
+- Interoperation should be enabled without requiring modifications to the DLT stack on which a network is built nor should it disrupt regular network operation. All that should be required are addition and configuration of enabling modules and adapting application workflows to make them interoperation-aware.
+
+## Weaver Use Cases
+The framework allows two independent networks built on the same or different DLTs to interoperate on a need basis. Though presently, Weaver supports only permissioned DLTs (Hyperledger Fabric, Corda, and to some extent Hyperledger Besu), the design encompasses both permissioned and open DLTs. We expect to add support to the latter (e.g., Ethereum, Bitcoin) in due course.
+
+Weaver, in effect, allows smart contracts managing data and assets on their respective ledgers to interlink and thereby produce an augnmented business workflow that can span multiple shared ledgers and networks. The core capabilities (or use cases) in Weaver that are the building blocks for cross-network operations are:
+- Data sharing across ledgers with proof of authenticity and provenance
+- Atomic asset transfers between networks
+- Atomic asset exchanges in multiple networks
+
+Each capability is implemented as a protocol with the endpoints being the respective peer networks that arrive at ledger state update decisions through consensus. See the [project overview](./OVERVIEW.md) for more information and references.
+
+With Weaver, limited-scope blockchain networks can be scaled up to a _network-of-networks_ where different DLT networks can interoperate using Weaver's protocols ad hoc, thereby creating an illusion of a worldwide distributed ledger (or blockchain) without requiring netowrks to sacrifice their independence. This is illustrated in the figure below.
+
+<img src="./resources/images/weaver-vision.png">
+
+## Weaver Components
+The framework offers common components that can be reused in networks built on any arbitrary DLT as well as design templates for components that must be built on DLT-specific tech stacks. We will strive to provide acclerators that minimize the effort involved in building DLT-specific components. Presently, we support Hyperledger Fabric and Corda, and to some extent Hyperledger Besu.
+- The key platform elements are:
+  * Protocol units, namely request access control, generation and verification of ledger state authenticity proofs, hash- and time-locking of assets, and claiming and unlocking of assets. These units leverage the networks' native smart contract frameworks.
+  * Generic and extensible patterns for _ledger views_ and _view addresses_ for seamless inter-network communication. Our goal is to provide a basis for an eventual standard that is not tied to a particular DLT implementation.
+  * Generic (i.e., not DLT-specific) semi-trusted _relay_ modules that mediate communication while acting on behalf of individual networks. They serve discovery and routing purposes akin to the routing and DNS infrastructure of the conventional internet.
+  * DLT-specific plugins called _drivers_ that augment relay capabilities with query- and response-translation mechanisms.
+  * Agents, consisting of both generic and DLT-specific features, that sync foreign networks' membership lists and identity provider credentials, using existing decentralized identity (DID) and verifiable credential (VC) infrastructure.
+- Apart from the core platform features listed above, we provide SDK extensions for network application users to adapt existing apps for interoperability.
+- We provide and maintain basic _testnets_ built on different DLTs (Fabric, Corda, Besu at present) for rapid prototyping and testing.
+
+For more details and illustrations, see the [project overview](./OVERVIEW.md).
+
+## Weaver Applications
+
+Weaver can be used to link business workflows (implemented as smart contracts or decentralized applications) spanning multiple independent permissioned ledgers, in effect scaling up the reach and impact of those processes without sacrificing decentralized operation and network sovereignty.
+
+Two popular categories of enterprise applications in which blockchain or distributed ledger technology play a major role today and which need interoperability support of the kind Weaver offers are:
+- [Global Trade](https://hyperledger-cacti.github.io/cacti/weaver/user-stories/global-trade/)
+- [Financial Markets](https://hyperledger-cacti.github.io/cacti/weaver/user-stories/financial-markets/)
+
+## Weaver Support Status
+The table below shows what interoperation capabilities (or use cases) are presently supported by Weaver, and what DLTs the platform offers out-of-the-box components for.
+- Any network built on a supported DLT can utilize Weaver capabilities with additional effort required only in configuration and minor adaptations in applications to exercise those capabilities as required in their workflows.
+- For any unsupported DLT, engineering effort will be required to build protocol units, drivers, and identity sync agents, using Weaver's common protobuf structures, design templates, and API specifications. (Because DLTs are heterogeneous with divergent models for data storage, smart contracts, and distributed application development procedures, it is difficult to write reusable code for this purpose.)
+
+<img src="./resources/images/weaver-support-table.png">
+
+Prominent features in our future roadmap are:
+- Make the protocols for data sharing, asset transfers, and asset exchanges, more robust and foolproof using techniques validated through research and experimentation.
+- Support the use cases of cross-network transaction invocations (i.e., instructions) and event dissemination (publish/subscribe).
+
+## Documentation
+- Blockchain practitioners who wish to understand what Weaver offers, use Weaver capabilities, or experiment with the code, should check the [Documentation](https://hyperledger-cacti.github.io/cacti/weaver/introduction/).
+- To dive straight into running a basic setup and testing sample interoperation scenarios, start with the [Getting Started guide](https://hyperledger-cacti.github.io/cacti/weaver/getting-started/guide/).
+
+## Repository Structure
+- Comprehensive specifications of our architecture and protocol suite are written in the style of RFCs and found in the [rfcs folder](./rfcs).
+- Core Weaver components are implemented in the [core folder](./core).
+- SDK extensions and libraries for DLT network applications to exercise Weaver interoperation capabilities are implemented in the [sdks folder](./sdks).
+- Sample applications used for testing and benchmarking interoperation flows are implemented in the [samples folder](./samples).
+- Common data structures and features used by different platform components and applications are implemented in the [common folder](./common).
+- Testing, experimentation, and evaluation frameworks, are implemented in the [tests](./tests) folder.
+  * An extensible _testnet_ is implemented in the [tests/network-setups folder](./tests/network-setups) to spin up basic Fabric, Corda, and Besu networks, and test various cross-network operations.
+- Older documentation inherited from the Weaver Lab project lies in the [docs folder](./docs), which is now deprecated. The source for the latest documentation lies in the [Cacti docs folder](../docs/docs/weaver).
+
+## Active Maintainers
+- https://github.com/VRamakrishna
+- https://github.com/sandeepnRES
+
+## Former Contributors
+- https://github.com/knarayan
+- https://github.com/dhinakaran2705
+- https://github.com/SIKHAR405
+- https://github.com/ermyas
+- https://github.com/nwaywood
+- https://github.com/dileban
+- https://github.com/airvin
+- https://github.com/AntTargett
+- https://github.com//Yining-Hu
+- https://github.com/Vinayaka-Pandit
+- https://github.com/hyp0th3rmi4
+- https://github.com/ghoshbishakh
+- https://github.com/michiboo
+- https://github.com/officialfrancismendoza
+- https://github.com/lehors - TSC Member and Sponsor
+- https://github.com/ChanderG
+- https://github.com/dushyantbehl
+
+
+========== FILE: weaver/SECURITY.md ==========
+# Hyperledger Security Policy
+
+## Reporting a Security Bug
+
+If you think you have discovered a security issue in any of the Hyperledger projects, we'd love to hear from you. We will take all security bugs seriously and if confirmed upon investigation we will patch it within a reasonable amount of time and release a public security bulletin discussing the impact and credit the discoverer.
+
+There are two ways to report a security bug. The easiest is to email a description of the flaw and any related information (e.g. reproduction steps, version) to [security at hyperledger dot org](mailto:security@hyperledger.org).
+
+The other way is to file a confidential security bug in our [JIRA bug tracking system](https://jira.hyperledger.org). Be sure to set the “Security Level” to “Security issue”.
+
+The process by which the Hyperledger Security Team handles security bugs is documented further in our [Defect Response page](https://wiki.hyperledger.org/display/SEC/Defect+Response) on our [wiki](https://wiki.hyperledger.org).
+
+
+
+========== FILE: weaver/rfcs/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Interoperability RFCs
+
+These RFCs capture abstractions, models, protocols and data formats for facilitating cross-ledger communication and transactions.
+
+If you are new to Weaver (or to blockchain interoperability), we recommend starting with the [protocol overview document](../OVERVIEW.md).
+
+If you wish to see Weaver in action, test it, or apply it to your own application, you can switch to the [Getting Started Tutorial](https://labs.hyperledger.org/weaver-dlt-interoperability/docs/external/getting-started/guide).
+
+Instead, if you wish to find out more details about the Weaver design and wish to contribute to the code base, you can explore these RFCs, beginning with the [models](./models). Protocol engineers will find in [RFC: 01-009](./models/infrastructure/relays.md) a useful overview of the relay model, and may then progress on to reading one of the existing protocols' design and implementation; e.g., the data sharing protocol in [RFC: 02-001](./protocols/data-sharing/generic.md). If you are interested in adding support for a new ledger technology, see the [existing driver implementations](../core/drivers) and [existing interoperability module implementations](../core/network). Where relevant we use [ABNF](https://tools.ietf.org/html/rfc5234) for formal syntax definitions.
+
+Precise definitions of terms you may encounter in these RFCs can be found in the [terminology page](terminology.md).
+
+<img src="resources/images/protocol-suite.png" width=75%>
+
+## Index of RFCs
+
+The RFC numbering convention is: `<type>:<id>`. The list of types (`<type>`) is as follows:
+| `<type>` | Document Type/Category      |
+|----------|-----------------------------|
+|    01    | Concepts and Models         |
+|    02    | Protocols and Mechanisms    |
+|    03    | Data Structures and Formats |
+
+| RFC #  | Title                               | Category | Status                                                                  |
+|--------|-------------------------------------|----------|-------------------------------------------------------------------------|
+| 01-001 | Views                               | Model    | [Proposed](./models/ledger/views.md)                                    |
+| 01-002 | Cryptographic Proofs                | Model    | [Proposed](./models/ledger/cryptographic-proofs.md)                     |
+| 01-003 | Verifiable Observation of State     | Model    | [Draft](./models/ledger/observation-of-state.md)                        |
+| 01-004 | Events                              | Model    | [Draft](./models/ledger/events.md)                                      |
+| 01-005 | Cross-Ledger Operations             | Model    | [Draft](./models/ledger/cross-ledger-operations.md)                     |
+| 01-006 | Atomic Cross-Ledger Transactions    | Model    | [Proposed](./models/ledger/atomic-cross-ledger-transactions.md)         |
+| 01-007 | Security Domains                    | Model    | [Proposed](./models/security/security-domains.md)                       |
+| 01-008 | End-to-End Confidentiality          | Model    | [Proposed](./models/security/confidentiality.md)                        |
+| 01-009 | Relays                              | Model    | [Proposed](./models/infrastructure/relays.md)                           |
+| 01-010 | Interoperation Modules              | Model    | [Proposed](./models/infrastructure/interoperation-modules.md)           |
+| 01-011 | Identity Management                 | Model    | [Proposed](./models/identity/network-identity-management.md)            |
+| 01-012 | Identity Registry                   | Model    | [Proposed](./models/identity/iin.md)                                    |
+| 01-013 | Identity Agent                      | Model    | [Proposed](./models/identity/iin-agent.md)                              |
+| 01-014 | Identity Trust Anchor Agent         | Model    | [Retired](./models/identity/iin-steward-agent.md)                       |
+| 01-015 | Network Identity Updates            | Model    | [Proposed](./models/identity/identity-update-policy.md)                 |
+| 02-001 | Data Sharing                        | Protocol | [Proposed](./protocols/data-sharing/generic.md)                         |
+| 02-002 | Data Sharing in Fabric              | Protocol | [Proposed](./protocols/data-sharing/fabric.md)                          |
+| 02-003 | Data Sharing in Corda               | Protocol | [Proposed](./protocols/data-sharing/corda.md)                           |
+| 02-004 | Asset Exchange through HTLC         | Protocol | [Proposed](./protocols/asset-exchange/generic-htlc.md)                  |
+| 02-005 | Asset Exchange in Fabric            | Protocol | [Proposed](./protocols/asset-exchange/fabric-htlc.md)                   |
+| 02-006 | Asset Exchange in Corda             | Protocol | [Proposed](./protocols/asset-exchange/corda-htlc.md)                    |
+| 02-007 | Asset Exchange in Besu              | Protocol | [Draft](./protocols/asset-exchange/besu-htlc.md)                        |
+| 02-008 | Asset Transfer                      | Protocol | [Proposed](./protocols/asset-transfer/generic.md)                       |
+| 02-009 | Asset Transfer in Fabric            | Protocol | [Proposed](./protocols/asset-transfer/fabric.md)                        |
+| 02-010 | Asset Transfer in Corda             | Protocol | [Proposed](./protocols/asset-transfer/corda.md)                         |
+| 02-011 | Identity and Config Sharing         | Protocol | [Superseded](./protocols/identity/id-config-sharing.md)                 |
+| 02-012 | Cross-Domain Identity Management    | Protocol | [Proposed](./protocols/identity/identity-syncing.md)                    |
+| 02-013 | Security Domain Discovery           | Protocol | [Draft](./protocols/discovery/discovery.md)                             |
+| 02-014 | Cross-Domain Negotiation            | Protocol | [Draft](./protocols/discovery/negotiation.md)                           |
+| 02-015 | Transaction Invocation              | Protocol | [Draft](./protocols/contract-invocation/invocation.md)                  |
+| 02-016 | Event Bus                           | Protocol | [Draft](./protocols/events/event-bus.md)                                |
+| 02-017 | Security Domain Identity Validation | Protocol | [Proposed](./protocols/identity/security-domain-identity-validation.md) |
+| 02-018 | Cross-Domain Membership Syncing     | Protocol | [Proposed](./protocols/identity/membership-syncing.md)                  |
+| 03-001 | View Address                        | Format   | [Proposed](./formats/views/addressing.md)                               |
+| 03-002 | Generic View                        | Format   | [Proposed](./formats/views/definition.md)                               |
+| 03-003 | Fabric View                         | Format   | [Proposed](./formats/views/fabric.md)                                   |
+| 03-004 | Corda View                          | Format   | [Proposed](./formats/views/corda.md)                                    |
+| 03-005 | Besu View                           | Format   | [Draft](./formats/views/besu.md)                                        |
+| 03-006 | Ethereum View                       | Format   | [Draft](./formats/views/ethereum.md)                                    |
+| 03-007 | View Request                        | Format   | [Proposed](./formats/views/request-response.md)                         |
+| 03-008 | Access Control Policy               | Format   | [Proposed](./formats/policies/access-control.md)                        |
+| 03-009 | Proof Verification Policy           | Format   | [Proposed](./formats/policies/proof-verification.md)                    |
+| 03-010 | Verification Policy DSL             | Format   | [Draft](./formats/policies/dsl.md)                                      |
+| 03-011 | Membership                          | Format   | [Proposed](./formats/network/membership.md)                             |
+| 03-012 | Network Identities                  | Format   | [Proposed](./formats/network/identity.md)                               |
+| 03-013 | Asset Exchange Units                | Format   | [Proposed](./formats/assets/exchange.md)                                |
+| 03-014 | Asset Transfer Units                | Format   | [Proposed](./formats/assets/transfer.md)                                |
+| 03-015 | Relay Messages                      | Format   | [Proposed](./formats/communication/relay.md)                            |
+| 03-016 | Fabric Interop Chaincode API        | Format   | [Proposed](./formats/network/fabric-interop-chaincode.md)               |
+| 03-017 | Interoperation CorDapp API          | Format   | [Proposed](./formats/network/interop-cordapp.md)                        |
+| 03-018 | Besu Interop Contract API           | Format   | [Proposed](./formats/network/besu-interop-contract.md)                  |
+| 03-019 | Application SDK                     | Format   | [Proposed](./formats/network/application-sdk.md)                        |
+| 03-020 | DID Method for DLT Networks         | Format   | [Proposed](./formats/network/iin_method.md)                             |
+
+## RFC Process
+
+NOTE: The following is only a tentative process pending further discussion.
+
+-   Draft
+-   Proposed
+-   Active
+-   Superseded
+-   Retired
+-   Abandoned
+
+
+========== FILE: weaver/rfcs/terminology.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Terminology
+
+**External Client**
+
+Or Remote Client, Observer, Remote Agent?
+
+**Destination Network**
+
+TBC (term needs to change)
+
+**Driver**
+
+...
+
+**IoP Modules** 
+
+What is a good general term for the modules we deploy on ledgers/networks to support interoperability?
+
+(e.g. InteropCorDapp, fnimcc/snamcc, etc)
+
+**Relay**
+
+...
+
+**Security Group**
+
+...
+
+**Source Network**
+
+TBC (term needs to change)
+
+
+========== FILE: weaver/rfcs/models/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Concepts and Models
+
+This folder contains specifications of concepts and models that Weaver components and [protocols](../protocols) are built on.
+
+Concepts around ledger data units and activity, based on which cross-ledger transactions and communication is enabled by Weaver, are described in the [ledger](./ledger) folder.
+
+Models that Weaver's communication infrastructure is built on are described in the [infrastructure](./infrastructure) folder.
+
+Models and infrastructure to manage identities across network boundaries are described in the [identity](./identity) folder.
+
+All security-, privacy-, and policy-related concepts are described in the [security](./security) folder.
+
+
+========== FILE: weaver/rfcs/models/infrastructure/relays.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Relays
+
+- RFC: 01-009
+- Authors: Allison Irvin, Antony Targett, Christian Vecchiola, Dileban Karunamoorthy, Ermyas Abebe, Nick Waywood, Venkatraman Ramakrishna, Sandeep Nishad
+- Status: Proposal
+- Since: 30-May-2022
+
+
+## Summary
+
+- A relay is a fulcrum of inter-network (or inter-ledger) communication.
+- Supports a DLT-neutral, asynchronous, event-based, message-passing protocol across boundaries of networks built on arbitrary DLT stacks.
+- Acts as a gateway for a network, serving as both an ingress and an egress point for cross-network messages.
+- Trustless for end-to-end integrity and confidentiality.
+- Multiple relays can serve a network, or relays can be hosted by dedicated services outside network boundaries.
+
+## Relays for Cross-Ledger Communication
+
+Relays are the fulcra (or mediums) of communication across networks maintaining distributed ledgers. They perform the following functions:
+- Pass messages conveying queries, instructions, and information from one network to another.
+- Mediate end-to-end protocols corresponding to [basic interoperability modes](../ledger/cross-ledger-operations.md) supported by Weaver.
+- Discover foreign networks' relays.
+- Route messages to foreign networks' relays if direct inter-relay communication is not possible.
+
+A relay runs both a server and a client, to serve and to initiate requests respectively. Both server and client should be built on a common transport protocol, and the protocol chosen in Weaver for this purpose is [gRPC](https://grpc.io/), because it is ubiquitous, standardizes, and actively supported in all popular programming languages.
+
+Cross-network protocols mediated through relays are DLT-neutral, i.e., independent of any specific DLT's characteristics. The basic protocol involves asynchronous, event-based, message-passing, and is stateless. Optionally, for added robustness and end-to-end reliability guarantees, the protocol can be made stateful through support for fault-tolerant communications and message queueing. Additionally, support for message prioritization and load balancing can be added to meet desired performance SLAs.
+
+Relays can serve as both ingress and egress points for networks. They offer application clients the ability to send requests to remote networks using a well-defined API and message structure as is illustrated in the figure below.
+
+<img src="../../resources/images/relay-model-dlt-destination.png" width=100%>
+
+The same relays can send messages to, and receive messages from, other relays, as is illustrated in the figure below. This figure also shows how a request received from a remote relay is served within the network using [drivers](#drivers-for-dlt-specific-operations) and [interoperation modules](./interoperation-modules.md).
+
+<img src="../../resources/images/relay-model-dlt-source.png" width=100%>
+
+A relay recognizes and communicates the following messages:
+- Ledger [view requests](../../formats/views/request-response.md) consisting of [view addresses](../../formats/views/addressing.md) and associated metadata
+- Ledger [views](../ledger/views.md)
+- Ledger (or smart contract) transaction invocations
+- Ledger [events](../ledger/events.md)
+
+Relays are trustless for end-to-end protocol integrity and confidentiality. This enables a variety of [deployment configurations](#deployment-models-and-considerations) without adversely impacting a network's security or increasing a network's trust footprint. Such trustlessness is achieved using [network-centric interoperation modules](./interoperation-modules.md) and [decentralized loosely-coupled cross-network protocols](../../protocols/).
+
+The relay module can be reused in any network built on any DLT platform with minimum network-specific customizations. It can be maintained independent of the DLT platform.
+
+## Drivers for DLT-Specific Operations
+
+Drivers are ledger-specific and DLT protocol-aware relay plug-ins, which can be selected and activated by relays in a protool within an endpoint network, as illustrated in the figure above. A driver serves the following functions:
+- Translate a DLT-neutral query or instruction, typically originating outside the network boundary, into a DLT-specific query or instruction that can be executed within the network by an interoperation module.
+- Generate a ledger view in response to a relay query.
+- Translate a DLT-neutral event into a DLT-specific event and vice versa.
+
+For example, in the [data sharing protocol](../../protocols/data-sharing/generic.md), a driver are tasked with orchestrating the generation of a view in response to a view address and collecting [authenticity proof](../ledger/cryptographic-proofs.md) to satisfy the [verification policy](../../formats/policies/proof-verification.md) within the request.
+
+Drivers are implemented as typical client applications on a given DLT platform. Some examples are as follows:
+- In Hyperledger Fabric, a driver is implemented on the Fabric SDK (in Node.js or Java or Go) through the `fabric-network` package and Gateway API, using which it can invoke chaincode deployed on the network's channels.
+- In Corda, a driver is implemented as a CorDapp that has the ability to trigger flows through the network's nodes.
+- In Hyperledger Besu, a driver is implemented as a Web3.js application that has the ability to invoke Solidity contracts deployed on the network.
+
+Because these are client applications, drivers must possess valid network creentials, typically in the form of wallet identities.
+
+As an ancillary component of the relay, a driver is also trustless for end-to-end protocol integrity and confidentiality.
+
+A relay module and a driver module can be coupled to varying extents, but our default design will assume a loose coupling whereby the driver runs a separate gRPC service from the relay and communicates with the latter using service APIs.
+
+Once a driver is designed for a given DLT, it can be reused in any network built on that DLT with minimum network-specific customizations. It will need to be periodically maintained for alignment with the clatest version of that DLT though.
+
+## Relay Functional API
+
+Here we list API function specs exposed to [application clients](#api-for-application-client), [relay](#api-for-other-relays) and [drivers](#api-for-driver). These all are RPC endpoints that can be implemented directly in a well-known protocol like gRPC. See the [relay](../../formats/communication/relay.md) and [view request](../../formats/views/request-response.md) format specifications for more details.
+
+### API for Application Client
+
+- **RequestState(networks.networks.NetworkQuery): returns common.ack.Ack**
+    This endpoint is for a client application (i.e., above the contracts) running in a DLT network, to request remote state via local relay, initiating [data sharing protocol]((../../protocols/data-sharing/generic.md#relay-flow) session. Since this request is asynchronous w.r.t the network, the request info/state machine is stored in a database on the requesting relay indexed via uniquely generated random id called `request_id`. This `request_id` is used to uniquely identify this query request in all the other endpoints' arguments or return messages. The local relay then sends the query to the remote relay via an API available for relay-relay communication (explained below).  This API takes a message of type [NetworkQuery](../../formats/communication/relay.md#networkquery) as argument, and returns [Ack](../../formats/views/request-response.md#ack) message. The local relays returns positive [Ack](../../formats/views/request-response.md#ack) to the client application when query is sent successfully to the remote relay, else a negative Ack with error message. On positive `Ack` client application can poll for the response by calling `GetState` API of the relay.
+    
+- **GetState(networks.networks.GetStateMessage): returns common.state.RequestState**
+    This endpoint is used by client application for polling the local relay to get the response to the query by using `request_id` returned in positive [Ack](../../formats/views/request-response.md#ack) by `RequestState` API (called by the same client earlier initiating data sharing protocol). The local relay fetches the database state based on provided `request_id` and prepares the response. It takes a message of type [GetStateMessage](../../formats/communication/relay.md#getstatemessage) as argument, and returns [RequestState](../../formats/views/request-response.md#requeststate) message. The `RequestState` can be in 4 states, indicated by `status` field, depending upon whether the local relay has received Ack from remote relay, or it is still pending; there is an error in the protocol or protocol is successfully completed and response view is available.
+
+### API for other Relays
+
+- **RequestState(common.query.Query): returns common.ack.Ack**
+    The requesting relay sends a [data sharing](../../protocols/data-sharing/generic.md) request, using RequestState API, to the remote relay with a query defining the data it wants to receive. The remote relay calls the driver using the gRPC endpoint provided by driver server (RequestDriverState, details below), passing on the query to the driver. It takes a message of type [Query](../../formats/views/request-response.md#query) as argument, and returns [Ack](../../formats/views/request-response.md#ack) message.
+
+- **SendState(common.state.ViewPayload): returns common.ack.Ack**
+    The remote relay, after receiving the response from the driver, asynchronously sends it to requesting relay using this endpoint. The requesting relay upon receiving the response, stores it in the database corresponding to the `request_id` key. It takes a message of type [ViewPayload](../../formats/views/request-response.md#viewpayload) as argument, and returns [Ack](../../formats/views/request-response.md#ack) message.
+
+### API for Driver
+
+- **SendDriverState(common.state.ViewPayload): returns common.ack.Ack**
+    This endpoint is used by the driver to send back the response of the query to the remote relay. The remote relay then passes this response to the requesting relay using the `SendState` API (explained above). It takes a message of type [ViewPayload](../../formats/views/request-response.md#viewpayload) as argument, and returns [Ack](../../formats/views/request-response.md#ack) message.
+
+
+## Driver Functional API
+
+Here we list API function specs exposed to relays by the drivers. These are RPC endpoints that can be implemented directly in a well-known protocol like gRPC. See the [view request](../../formats/views/request-response.md) format specifications for more details.
+
+- **RequestDriverState(common.query.Query): returns (common.ack.Ack)**
+    The remote relay sends a request to the driver, identified by the [view address](../../formats/views/addressing.md), with a query defining the data it wants to receive. This is where driver unpacks the view address, makes a call to the requested contract using given arguments, and collects the response along with the proof, packages them into a DLT-specific view message, and then encapsulating it to a DLT-neutral view message. This final message is then sent back to remote relay using above relay's API (SendDriverState). It takes a message of type takes [Query](../../formats/views/request-response.md#query) as argument, and returns [Ack](../../formats/views/request-response.md#ack).
+
+## Deployment Models and Considerations
+
+Relays and drivers can be deployed in a variety of configurations, depending on the trust assumptions on which a network is built and ease of maintenance. They can be deployed and run by one of the network participants, as a separate network participant in their own right, or as part of a centralized service managed by the network's consortium. These options are illustrated in the Hyperledger Fabric context in the figure below, where a relay (the driver is not explicitly called out but is assumed to be an extension of the relay) can belong to one of the existing organizations (Model A), belong to the ordering service organization (Model B), or be part of a separate organization created just for the purpose of running a relay (Model C).
+
+<img src="../../../resources/images/relay-deployment-models.png" width=100%>
+
+Because drivers need credentials (or wallet identities), the relay/driver combination, or at least the driver, must belong to a network participant unit that has the authority to issue credentials (like an organization in a Fabric network, as illustrated in the above figure). As the driver is trustless, the deployment mode does not impact the integrity and confidentiality of the interoperability protocols though. Therefore, ease of use and maintenance should be the determining factor, and our recommendation is that Model A be the default choice for a Fabric network (and equivalents of this model for other DLTs).
+
+The DLT-neutral relay component does not need to be tied to a network participant or even to the network itself. Though our default recommendation is that it be maintained by one of the network's participant units, it may also be offered by services external to a network using some form of a subscription model.
+
+Different considerations apply for availability and fault tolerance. Multiple relays, either maintained by different network participants, or even by entities external to the network, will provide a higher quality of service than a single relay, and this should be the default model for a production deployment. Redundant drivers should also be used for high availability. In addition, different drivers can be deployed to serve different shared ledgers or private data collections within a network too, which would allow the network administrators to issue different credentials with minimum privilege to these drivers instead of issuing broad-access credentials to a single driver.
+
+
+========== FILE: weaver/rfcs/models/infrastructure/interoperation-modules.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Interoperation Modules
+
+- RFC: 01-010
+- Authors: Venkatraman Ramakrishna, Sandeep Nishad, Krishnasuri Narayanam, Dhinakaran Vinayagamurthy
+- Status: Proposal
+- Since: 02-Apr-2022
+
+
+## Summary
+
+- Consensus-driven module to perform core basic interoperation functions involving access control, proof management, and asset lock management.
+- Implemeented as a typical smart contract and/or DApp (distributed application) on a given DLT platform.
+- Forms a trusted base for interoperation as it is exactly as trustworthy as the network (collective) as a whole.
+
+## Interoperation Module as a Trusted Base for Interoperation
+
+An interoperation module is a DLT-aware module that performs all cross-network interoperability-related functions that require consensus-driven decision making by a network. The interoperation module serves as an endpoint for any [interoperability mode](../ledger/cross-ledger-operations.md), or cross-network operation/protocol, supported by Weaver. The logic behind using such modules for the core functions performed within a network during any protocol session is that those functions must be executed by the network's participants as a collective and adhere to the network's consensus standard. Therefore, such a module is no less trustworthy than the network as a whole and is no more susceptible to Byzantine failure than the network. To compare against a strawman, using a trusted proxy to run the interoperation module's functions would be insecure as the proxy may be unreliable. Hence, using an interoperation module that makes decisions via its network's native consensus mechanism provides a trusted base for any cross-network interoperation using Weaver.
+
+For an interoperation module to provide a trusted base of this kind, it must be implemented as a smart contract or a distributed app (DApp) on a given DLT, as smart contracts and DApps in any DLT are designed to finalize transactions with consensus-driven safeguards. Once implemented for a given DLT, it can be reused with minimal network-specific customization on any network built on that DLT platform. Some examples:
+- In Hyperledger Fabric, it is implemented as a set of chaincodes deployed on all the peers of a channel that are running applications involved in cross-network (or cross-ledger) operations.
+- In Corda, it is implemented as a CorDapp and installed on all nodes maintaining data in their vaults that are impacted by cross-network operations.
+- In Hyperledger Besu, it is implemented as a set of Solidity contracts installed on the network's nodes.
+
+## Core Basic Interoperation Module Functions
+
+The basic capabilities an interoperation module offers are listed below (in the future, other capabilities may be added to support new interoperation modes):
+- Access control for [view requests](../../formats/views/request-response.md) originating outside the network
+- [Proof generation](../ledger/cryptographic-proofs.md) for ledger [views](../ledger/views.md)
+- [Proof verification](../../formats/policies/proof-verification.md) for ledger views
+- Locks, claims, and unlocks for [asset exchanges](../../protocols/asset-exchange/generic-htlc.md)
+- Pledges and reclaims for [asset transfers](../../protocols/asset-transfer/generic.md)
+- [Ledger commitments](../ledger/observation-of-state.md) requested by parties outside the network
+
+These functions are illustrated in the layer marked '_Distributed Application: Smart Contracts and/or Flows_' in the figure below.
+
+<img src="../../resources/images/interop-module.png" width=100%>
+
+To perform the core functions, the smart contracts or distributed apps need to maintain several artifacts on the ledgers (e.g., channels in Fabric, vaults in Corda) as indicated in the figure. These are:
+- [Security domain](../security/security-domains.md) information of foreign networks, primarily consisting of those networks' members/participants and their CA certificates
+- [Access control policies](../../formats/policies/access-control.md) governing external requests
+- [Proof verification policies](../../formats/policies/proof-verification.md) to validate external ledger views
+- [Lock and claim statuses of assets](../../formats/assets/exchange.md) maintained by smart contracts or distributed applications for asset exchanges
+- [Pledge and claim statuses of assets](../../formats/assets/transfer.md) maintained by smart contracts or distributed applications for asset tramsfers
+
+## Generic Interface Template
+
+The interoperation module exposes its capabilities to relay drivers as well as applications running on the network, as indicated in the above figure. Because interoperation modules can vary significantly in design with DLT type, we don't specify a precise common API but instead provide a template or reference interface that can be instantiated as appropriate in a given DLT.
+
+_TBD: List functions that any interoperation module, regardless of the DLT type, ought to expose, and specify their purposes._
+
+## Application SDK
+
+Every blockchain or DLT platform offers an SDK consisting of library functions and a well-defined API for developers' ease-of-use and to hide the complexity of the underlying platform's commitment and consensus processes. In Weaver, we adopt a similar philosophy and provide an SDK that enables the developers to write code that interfaces both with the interoperation module (as can be seen in the above figure) and with a relay in an intuitive manner. In essence, the core capabilities of the interoperation module are exposed at the application layer through this SDK. For details, see the [Application SDK formats](../../formats/network/application-sdk.md).
+
+## Interoperation Module Designs in Prominent DLT Platforms
+
+Weaver supports interoperation modules for three prominent DLTs, listed below.
+
+### Hyperledge Fabric
+
+The interoperation module takes the form of a Fabric Interopration Chaincode, which has two parts:
+- A chaincode that must be installed on all peers of a channel which maaintains ledger data that is involved in cross-network operations, and which can be invoked by the relay drivers and client applications.
+- A set of interfaces and utility functions that can be imported into application chaincode and exercised for asset exchanges and transfers as required.
+
+For details, see the [Fabric Interoperation Chaincode API](../../formats/network/fabric-interop-chaincode.md).
+
+### Corda
+
+The interoperation module takes the form of an Interoperation CorDapp, consisting of flows, contracts, and states, that provide basic interoperation capabilities.
+
+_TBD: Add more details here._
+
+For details, see the [Interoperation CorDapp API](../../formats/network/interop-cordapp.md).
+
+### Hyperledger Besu
+
+The interoperation module takes the form of a Besu Interoperation Contract that consists of a set of Solidity contracts. As with Fabric, some of these contracts are installed on the network nodes and can be invoked by relay drivers and applications, whereas other provide interfaces and library functions for application Solidity contracts to import and exercise.
+
+_TBD: Add more details here._
+
+For details, see the [Besu Interoperation Contract API](../../formats/network/besu-interop-contract.md).
+
+
+========== FILE: weaver/rfcs/protocols/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Protocols
+
+This folder contains specifications of the protocols that Weaver supports.
+
+The cross-network data sharing protocol specifications are described in the [data-sharing](./data-sharing) folder.
+
+The cross-network asset exchange protocol specifications are described in the [asset-exchange](./asset-exchange) folder.
+
+The cross-network asset transfer protocol specifications are described in the [asset-transfer](./asset-transfer) folder.
+
+Protocols for cross-network event publish/subscribe are specified in the [events](./events) folder.
+
+Specifications of all protocols involved in cross-network identity management are described in the [identity](./identity) folder.
+
+Network discovery protocol specifications are described in the [discovery](./discovery) folder.
+
+
+========== FILE: weaver/rfcs/protocols/data-sharing/generic.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Data Sharing Protocol
+
+- RFC: 02-001
+- Authors: Antony Targett, Nick Waywood, Sandeep Nishad, Venkatraman Ramakrisna
+- Status: Proposed
+- Since: 02-Jan-2023
+
+## Summary
+
+This document specifies a request-response-validate protocol whereby a client application in one network requests data from another network's peers and submits the received data to its network's peers for validation.
+Each network has a [relay](../../models/infrastructure/relays.md) that acts as an ingress and egress point for cross-network communication (i.e., messages and notifications).
+This pair of network relays communicate messages using a DLT-agnostic protocol.
+The [request](../../formats/views/request-response.md) is communicated in the form of a [view address](../../formats/views/addressing.md) plus a [verification policy](../../formats/policies/proof-verification.md).
+The response is communicated in the form of a [view](../../formats/views/definition.md), which contains a [proof](../../models/ledger/cryptographic-proofs.md).
+The responding network's peers run [access control policy](../../formats/policies/access-control.md) checks agianst the received view address.
+The responding network's peers can optionally [encrypt the requested data using the requesting client's public key](../../models/security/confidentiality.md) before sending a response.
+Access control checks, encryptions, and validations, are performed by the respective networks' [interoperation modules](../../models/infrastructure/interoperation-modules.md).
+
+## Motivation
+
+Data sharing (i.e. querying data) across networks/ledgers is a fundamental interoperability requirement or mode. It enables the stiching of smart contracts running in separate networks whereby a data requirement in a workflow in one network can be fulfilled by sourcing that data from a different network rather than relying on potentially untrustworthy clients or third parties. This enables the scaling up of business workflows across (or spanning) multiple networks without sacrificing the decentralization and trust offered by DLT protocols.
+
+## Key Concepts
+
+- [Discovery protocol](../discovery/discovery.md): Before a data sharing can occur between two networks, the requesting network needs to be aware of other networks. The discovery protocol is responsible for this.
+- [Addressing](../../formats/views/addressing.md): Addressing is how a network can specify the data it wants from another network. This is akin to URLs in the World Wide Web.
+- [Views](../../models/ledger/views.md): The self-authenticating data that can be shared by a network and identified by an address from outside the network. Its [format](../../formats/views/definition.md) has DLT-agnostic and DLT-specific parts, and it consists of [DLT-specific proofs](../../models/ledger/cryptographic-proofs.md) indicating an authentic association with the source ledger.
+- [Verification Policy](../../formats/policies/proof-verification.md): Standard for authenticity proof as supplied by the data requestor, usually accompanying a view address.
+- [View request](../../formats/views/request-response.md): A message consisting of a view address and an associated verification policy.
+- [Access control policy](../../formats/policies/access-control.md): Standard for supplying addressable data to a requestor. Typically maintained as a collection of rules specifying which entities may access which categories of data (i.e., which comprise views).
+- [Confidentiality](../../models/security/confidentiality.md): Data embedded in views can be encrypted using the requestor's public key.
+
+## Protocol Overview
+
+The high-level overview of the protocol is illustrated in the figure below. By convention, the destination network (requesting and consuming the data) is on the left and the source network (sharing the data) is on the right:
+
+<img src="../../resources/images/data-sharing-protocol-overview.png" width=100%>
+
+The key steps are in the following sequence:
+1. Application client in destination network (left-hand side) sends a view request (view address and verification policy) to its network's relay.
+2. Destination network's relay discovers the source network's relay and communicates the view address to it.
+3. Source network's relay, via a suitable driver, invokes its network's interoperation module to satisfy the view request.
+4. Source network's interoperation module:
+  a. Runs an access control check before invoking the appropriate contract/dapp to fetch the state corresponding to the view request.
+  b. Optionally encrypts the received state using the application client's public key if end-to-end confidentiality is (i) mandated by the source network, or (ii) specified in the view request.
+5. Source network's interoperation module returns a collection of states with associated proofs (e.g., endorsement signatures) to the requesting driver.
+6. Source network's driver packages the collection of states and proofs into a view and dispatches it to its relay.
+7. Source network's relay communicates the view to the destination network's relay.
+8. Destination network's relay communicates the view to the application client.
+9. Application client optionally decrypts the state embedded in the view if it is encrypted, and also optionally validates the proof accompanying the view.
+10. Application client submits the view, optionally the decrypted state, and the view address in the request to the destination network's interoperation module for validation.
+11. Destination network's interoperation module validates the proof and invokes the appropriate contract/dapp to perform an operation as per its business workflow using the state embedded in the view.
+
+The protocol with its sequence of steps is also illustrated in a model diagram below linking two separate networks running on different DLTs (loosely modeled on Corda at the left and Fabric on the right), with the protocol units and the Weaver components exercised set in context within their respective networks:
+
+<img src="../../resources/images/data-sharing-protocol-networks.png" width=100%>
+
+## Protocol Flow and Messages
+
+A more detailed flow diagram is illustrated in the figure below:
+
+<img src="../../resources/images/data-sharing-flow.png" width=100%>
+
+Messages and API functions in relevant steps in the above workflow are given below:
+- *Client Application `-->` Destination Interoperation Module*: Query verification policy for view address: this is done using the `GetVerificationPolicy` or `GetVerificationPolicyBySecurityDomain` function exposed by the interoperation module.
+- *Destination Interoperation Module `-->` Client Application*: Response: `verification policy`: this is a serialized form of a [VerificationPolicy protobuf message](../../formats/policies/proof-verification.md#defining-verification-policies).
+- *Client Application `-->` Destination Relay*: Request: `<view address, verification policy>`: the client application sends a [NetworkQuery](../../formats/communication/relay.md#networkquery) message to the relay.
+- *Destination Relay `-->` Source Relay*: Request: `<request id, view address, verification policy>`: the destination relay sends a [Query](../../formats/views/request-response.md#query) message to the source relay.
+- *Source Relay `-->` Source Driver*: Request: `<request id, view address, verification policy>`: the source relay sends a [Query](../../formats/views/request-response.md#query) message to the source driver.
+- *Source Driver `-->` Source Interoperation Module*: Query state: this is done using the `HandleExternalRequest` function exposed by the interoperation module.
+- *Source Interoperation Module `-->` Source Driver*: Response: `<state, proof>`: this is a serialized form of a DLT-specific view, e.g., [FabricView protobuf message](../../formats/views/fabric.md#view-data-definition)in Fabric networks, [ViewData protobuf message](../../formats/views/corda.md#view-data-definition) in Corda networks.
+- *Source Driver `-->` Source Relay*: Response/poll: `<view, proof>`: this is a serialized form of a [ViewPayload protobuf message](../../formats/views/request-response.md#viewpayload).
+- *Source Relay `-->` Destination Relay*: Response/poll: `<view, proof>`: this is a serialized form of a [ViewPayload protobuf message](../../formats/views/request-response.md#viewpayload).
+- *Destination Relay `-->` Client Application*: Response/poll: `<view, proof>`: this is a serialized form of a [ViewPayload protobuf message](../../formats/views/request-response.md#viewpayload).
+- *Client Application `-->` Destination Interoperation Module*: Submit state validation Tx: `<contract/dapp Tx, view, proof>`: this is done using the `WriteExternalState`function exposed by the interoperation module.
+- *Destination Interoperation Module `-->` Client Application*: Response: `Tx success/failure`: this is either a blank (success) or an error message (failure).
+
+## Inter-Relay Protocol
+
+The protocol between two relays is both DLT-agnostic and completely separable from the rest of the data sharing protocol. We specify its salient features in this section.
+
+### Roles
+
+There are two roles in the `data-sharing` protocol: `requester` and `responder`. The requester asks the responder for some data, and the responder answers. Each role uses a single message type.
+
+### States
+
+This is a classic two-step request~response interaction, so it uses the predefined state machines for any `requester` and `responder`:
+
+<img src="../../resources/images/data-sharing-states.png" height="550" width="700">
+
+### Relay Flow
+
+<img src="../../resources/images/relay-flow.png" width=100%>
+
+The end-to-end flow is explained in figure above. The steps numbers from figure are illustrated below:
+
+1. Client prepares `NetworkQuery` and sends it to Destination Relay via `RequestState` (Client App) API.
+  * **1.1:** Destination relay (inside Client’s `RequestState`) generates unique `request_id` for the query and stores the `RequestState` message with current status as `PENDING_ACK` in local database at key `request_id`.
+  * **1.2:** Destination relay (inside Client’s `RequestState`) prepares `Query` and spawns a thread to send the Query to source relay via `RequestState` (Relay Service) API. When destination relay will receive `Ack` from source relay, it will update the status of `RequestState` as `PENDING` in database at key `request_id`
+  * **1.2a:** Destination relay (inside Client’s `RequestState`) returns Ack to the client at the end of this API (happens asynchronously with step **1.2**).
+  * **1.3:** Source relay (inside Relay’s `RequestState`) upon receiving the `Query`, stores it in remote database at key `request_id`.
+  * **1.4:** Source relay (inside Relay’s `RequestState`) then spawns a thread to send `Query` to the intended driver based on Query via `RequestDriverState` API exposed by the driver.
+  * **1.4a:** Source relay (inside Relay’s `RequestState`) returns `Ack` back to the destination relay (happens asynchronously with step **1.4**).
+  * **1.5:** Driver (inside `RequestDriverState`) based on `Query`, asynchronously spawns a thread that submits transaction to DLT network using [interoperation module](./interoperation-modules.md). The response payload from `interoperation module` is received by the driver, then it creates a `View` payload based on DLT platform (e.g. [Fabric View](../../formats/views/fabric.md), [Corda View](../../formats/views/corda.md) or [Besu View](../../formats/views/besu.md) ), and then encapsulate it to DLT-neutral [View](../../formats/views/definition.md) along with meta-data. 
+  * **1.5a:** Driver returns `Ack` back to the source relay (happens asynchronously with step **1.5**).
+  * **1.6:** Driver (inside `RequestDriverState`) and then prepares and sends the `ViewPayload` to the source relay via `SendDriverState` API.
+  * **1.7:** Source relay (inside `SendDriverState`) then fetches the `Query` from remote database using `request_id` from `ViewPayload`.
+  * **1.8:** Source relay (inside `SendDriverState`) spawns a thread to send the `ViewPayload` back to the destination relay via `SendState` API.
+  * **1.8a:** Source relay (inside `SendDriverState`) returns `Ack` back to the driver (happens asynchronously with step **1.8**).
+  * **1.9:** Destination relay (inside `SendState`) stores the `RequestState` message with updated `state` (storing view) and `status` as `COMPLETED`, in the local database at key `request_id`.
+  * **1.10:** Destination relay (inside `SendState`) returns `Ack` back to the source relay.
+2. Client polls for response from Destination Relay via `GetState` API, passing `GetStateMessage` containing `request_id`.
+  * **2.1:** Destination relay fetches the `RequestState` message stored in local database at key `request_id`.
+  * **2.2:** Destination relay returns the `RequestState` obtained in step **2.1** to the client.
+
+## Client API and SDK
+
+In the [flow diagram](./generic.md#protocol-flow-and-messages), the client application is the initiator and orchestrator of the request-response-validate protocol for cross-network data sharing. For developer convenience, it is recommended that a single synchronous function be provided in the Weaver SDK for DLT applications to run the end-to-end flow. In the diagram, this would cover the entire vertical span of the "Client Application" line, from looking up a wallet identity to getting a notification of transaction success or failure in the local network. Optionally, based on a supplied parameter, this function may terminate when the client application receives a `ViewPayload` message from the local network's relay containing the data supplied by the remote network. The submission of the view for validation may, in certain situations, be deferred to a different time as per the client's (or the business workflow's) requirement.
+
+
+========== FILE: weaver/rfcs/protocols/asset-exchange/generic-htlc.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Asset Exchange - HTLC
+
+- RFC: 02-004
+- Authors: Dileban Karunamoorthy, Ermyas Abebe, Venkatraman Ramakrishna, Sandeep Nishad, Krishnasuri Narayanam, Dhinakaran Vinayagamurthy
+- Status: Proposed
+- Since: 25-Nov-2020
+
+## Summary
+
+* Asset exchange protocols allow parties to trade assets residing in different ledgers.
+* Hash Time Locked Contract (HTLC) is a pattern for enabling asset exchanges without placing trust in a central party.
+* HTLCs are atomic in nature, in that, either a deal executes and parties receive the assets they wanted, or parties retain their original assets.
+
+## Atomic Swaps with Hash Time Locked Contracts
+
+Hash Time Locked Contracts (HTLCs) is a non-custodial approach to exchanging assets between two or more parties. Although HTLCs do have some drawbacks in their construction, they are simple enough to address a number of real-world exchange scenarios. 
+
+The following figure describes the flow of a two-party exchange.
+
+<img src="../../resources/images/asset-exchange-htlc-example.png" width=80%>
+
+Alice and Bob agree on a deal off-chain to exchange assets A for B. In practice assets A and B could be fungible or non-fungile and the deal is based on their fair value. Alice and Bob also agree on the refund period for the deal and decide who will go first. The process for exchanging the assets then proceeds as follows.
+
+1. Alice creates an agreement on *Ledger A*, locking her asset using the hash *H(s)* of a secret *s* for the period *2t*. The secret is only known to Alice at this stage.
+2. Upon inspection, Bob creates a corresponding agreement on *Ledger B* locking his asset using the same hash shared by Alice. The refund period is set to *t*.
+3. Alice inspects Bob's agreement before proceeding. She verifies the hash *H(s)* and period *t*.
+4. Alice attempts to claims Bob's asset using secret *s*. If the hash of *s* matches *H(s)* in the agreement and the current time is less than *t*, the asset is unlocked and transferred to Alice.
+5. Bob, observing the secret shared by Alice on *Ledger B*, now attempts to claim Alice's asset using secret *s*. If hash of secret *s* matches *H(s)* and the current time is less than *2t* the asset is unlocked and transferred to Bob.
+
+In the event Alice fails to claim Bob's asset before the refund period *t* elapses, Bob can reclaim his asset any time after. Similarly, Alice can reclaim her asset any time after *2t*.
+
+
+## Overview of Protocol Flow
+
+<img src="../../resources/images/asset-exchange-htlc-flow.png" width=95%>
+
+
+## Protocol Messages
+
+Data structures and formats for messages used in the asset exchange protocol implementation are described [here](../../formats/assets/exchange.md).
+
+
+## DLT-Specific Designs
+
+Implementation of the protocol is DLT-specific. See the following for details on currently supported DLTs:
+- [Hyperledger Fabric](./fabric-htlc.md)
+- [R3 Corda](./corda-htlc.md)
+- [Hyperledger Besu](./besu-htlc.md)
+
+
+## Open Questions 
+
+* Can the coordination and agreement on the deal, which currently happens off-chain, be coordinated by the protocol?
+* Do we assume that the application, acting on behalf of Alice and Bob, is always available and that a deal never partially fail?
+  * Given this is a permissioned network, on the rare chance that an application is down after counter party has claimed asset, the failure to claim can be resolved through manual procedures involving the management committees and proving of counter party claims.
+* The relay and driver plays no special role besides communicating flow of messages.
+* Alternatively, the application layer can coordiante the whole swap instead of involving the relay / drivers.
+
+
+## Additional Notes
+
+* Alice sets up deal on-chain by locking asset
+  * Asset owned by Alice
+  * Image of secret (hash-lock)
+  * Duration till asset can be redeemed
+  * Bob as counter-party
+  * Address of counter party's asset
+  * Deal ID
+* Creation of deal generates event that is propagated to destination network
+* Bob creats corresponding deal using event data on destination network
+  * Asset owned by Bob
+  * Image of secret 
+  * Duration till asset can be redeemed
+  * Alice as counter-party
+  * Address of counter party's asset
+  * Deal ID (matches with deal ID in origin network)
+* Scenario 1: Alice claims Bob's asset on destination network
+  * Submits secret
+  * Secret is propagated to origin network
+  * Automatic claim executed.
+    * Possible failure if message is lost.
+      * Bob claims Alice's asset using secret.
+* Scenario 2: Time lock expires
+  * Bob reclaims asset in destination network
+  * Alice reclaims asset in source network
+  * Alternatively, automatic reclaiming by driver or application
+
+
+
+
+========== FILE: weaver/rfcs/protocols/asset-transfer/generic.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Asset Transfer Protocol
+
+- RFC: 02-008
+- Authors: Venkatraman Ramakrishna, Krishnasuri Narayanam, Sandeep Nishad, Dhinakaran Vinayagamurthy
+- Status: Proposed
+- Since: 26-Dec-2022
+
+## Summary
+
+Asset transfer protocol in Weaver allows transferring an asset from one shared ledger to another by burning it in the source ledger and creating it in the destination ledger in an atomic manner.
+- Creating of the asset in the destination ledger should happen within an agreed-upon period. Otherwise, the asset is created in the source ledger after the time period elapses.
+
+## Protocol Overview
+
+The asset transfer protocol specified in this document realizes the model described in the [atomic cross-ledger transactions spec](../../models/ledger/atomic-cross-ledger-transactions.md).
+
+This protocol uses as its building blocks:
+- Smart contracts (for network-local operations)
+- Cross-network [data sharing protocol](../data-sharing/generic.md)
+
+The ledgers, participants, and sequence of states they go through to either effect an asset transfer or revert to the original state (upon failure of any kind) are illustrated in the figure below. (_Note_: Alice and Bob may represent the same real-world entity. Asset _M_ in both ledgers are assumed to be equivalent in a global sense, though their internal representations may vary from Ledger _A_ to Ledger _B_, especially if the two ledgers are built on different DLT platforms.
+
+<img src="../../resources/images/asset-transfer-states.png" width=80%>
+
+In a nutshell, the protocol can be described intuitively as follows:
+- **Pledge Phase**: Alice pledges (or locks) M in Bob's favor in Ledger A
+- **Claim Phase**: Bob mounts a claim to mint and own M in Ledger B using proof (acquired from Ledger A) of M being pledged by Alice in his favor
+- **Claim Phase**: If Bob was able to claim within the expiration time T, the asset is successfully transferred across ledgers from Alice to Bob
+- **Reclaim Phase**: If the claim did not occur (for whatever reason) and the pledge has expired, Alice can freely reclaim M in Ledger A using proof (acquired from Ledger B) of M being unclaimed by Bob
+- **Reclaim Phase**: If Alice mounts her reclaim after the expiration period T and provides valid proof of the unclaimed status of M in Ledger B, the asset transfer fails and M reverts to her ownership.
+Integrity of the asset is guaranteed through the cross-ledger atomicity ensured by this protocol: either the Claim Phase suceeds or the Reclaim Phase does, thereby resulting in only one of the two following outcomes:
+- Bob owns M in Ledger B
+- Alice owns M in Ledger A
+
+## Generic Asset Transfer Flow
+
+The asset transfer flow is illustrated in more detail in the following figure, and in the description further below. It shows the protocol followed by Alice and Bob, using transaction within the ledgers and cross-network data sharing queries across the ledgers:
+
+<img src="../../resources/images/asset-transfer-flow.png" width=80%>
+
+1. Alice pledges or locks asset *M*, which she owns, in Ledger *A*, in a commitment to burn it upon successful minting and assigning to Bob's ownership in Ledger *B* within time period *T*.
+2. Bob fetches the pledge status for *M* in Ledger *A* using a cross-ledger [data sharing query](../data-sharing/generic.md).
+    - If Ledger *A* reports the existence of no such pledge by Alice on asset *M*, the protocol terminates.
+    - Otherwise, if Ledger *A* reports the expiration of the pledge (i.e., Bob send the query after time period *T*), the protocol terminates.
+3. Bob mints and acquires ownership of asset *M* in Ledger *B* by providing the fetched pledged details along with proof from Ledger *A*.
+    - If the proof is invalid or indicates the absence of a pledge or indicates that the pledge has expired, minting of asset *M* fails.
+    - Otherwise, if the current time exceeds *T*, minting of asset *M* fails.
+    - Otherwise, asset *M* is minted and issued to Bob on Ledger *B*.
+4. Alice fetches the claim status of asset *M* in Ledger *B* using a cross-ledger [data sharing query](../data-sharing/generic.md).
+    - If Ledger *B* reports a successful minting of asset *M* and issuance to Bob, the protocol terminates.
+    - Otherwise, if ledger *B* doesn’t report a successful mint of asset *M* by Bob but the current time has not exceeded *T*, then Alice retries this step after some time.
+    - If ledger *B* doesn’t report a successful mint of asset *M* by Bob and the current time has exceeded *T*, then Alice proceeds to the next step.
+5. Alice mints asset *M* in ledger *A* by providing the last queried mint status from ledger *B* as the proof.
+    - If the asset was already claimed in ledger _B_ then minting again the same asset in ledger _A_ is not carried out.
+
+*Note*: though Alice may fetch the claim status of asset *M* (Step 4) at any point in time, Ledger A will not permit the reclamation or unlock of the asset until the time period *T* has elapsed. As a practical matter, because Alice does not know exactly when to fetch the claim status proof for successful reclamation, she may attempt Step 4 multiple times by programming her client/agent suitably. Though this will add communication overhead, it will not impact the correctness of the protocol.
+
+## Protocol Units or Building Blocks
+
+Weaver will support the following functions, which can be either exercised using the [interoperation module](../../models/infrastructure/interoperation-modules.md), which offers them as transactions, or as a library package:
+- `PledgeAsset(<asset-type>, <asset-id-or-quantity>, <recipient-network-id>, <recipient-user-id>, <pledge-expiration-time>)`: This records the fact that a generic asset is pledged by the caller in favor of a generic recipient for a particular time period as an [AssetPledge structure](../../formats/assets/transfer.md#representing-an-asset-transfer-pledge). Before recording, it checks whether the asset has already been pledged by querying the ledger. If not, the asset is locked and its state of ownership may not be modified until the expiration of that time period. The specifications of the asset are opaque to this function and is provided in the form of a blob. The recipient must be identified both by a network ID (i.e., the network/ledger to which the asset is to be transferred) and a cryptographically verifiable identity (typically a certificate). The function MUST produce and return (to the caller) a `<pledge-id>` that uniquely identifies this asset transfer instance (or session).
+- `ClaimRemoteAsset(<pledge-id>, <recipient-network-id>, <pledge-status>)`: This first parses the pledge status, which is an [AssetPledge structure](../../formats/assets/transfer.md#representing-an-asset-transfer-pledge) or a serialized form of it. (*Note*: this pledge status is supposed to be sourced from the network where the given asset is pledged, and the associated proof is validated by the [interoperation module](../../models/infrastructure/interoperation-modules.md)). The pledge status is then validated to ensure that the caller is the intended recipient of the asset, that the recipient network and user as specified in it match the ones supplied as parameters, and that the pledge has not expired already (by comparing the current time with the pledge expiration time). Upon success, a claim by the recipient on the given asset associated with the `<pledge-id>` is recorded on the ledger as an [AssetClaimStatus structure](../../formats/assets/transfer.md#representing-claims-on-pledged-assets). The specifications of the asset are opaque to this function and is provided in the form of a blob. The recipient's network ID (i.e., the network/ledger to which the asset is to be transferred) must be explicitly passed to this function whereas the recipient's identity is an attribute within the `AssetPledge` structure.
+- `ReclaimAsset(<pledge-id>, <recipient-network-id>, <recipient-user-id>, <claim-status>)`: This first looks up the pledge corresponding to `<pledge-id>` from the ledger and validates it to ensure that it has expired. Then the claim status is parsed, which is an [AssetClaimStatus structure](../../formats/assets/transfer.md#representing-claims-on-pledged-assets) or a serialized form of it. (*Note*: this claim status is supposed to be sourced from the network where the given asset is to be transferred/claimed, and the associated proof is validated by the [interoperation module](../../models/infrastructure/interoperation-modules.md)). The claim status is then validated to ensure that the asset claimer matches the pledge recipient, that the pledger matches the original owner associated with the claim, that the claim time has expired, and that the claim was not made within the expiration time. The recipient must be identified both by a network ID (i.e., the network/ledger to which the asset is to be transferred) and a cryptographically verifiable identity (typically a certificate).
+- `GetAssetPledgeStatus(<pledge-id>, <recipient-network-id>, <recipient-user-id>)`: This returns the [AssetPledge structure](../../formats/assets/transfer.md#representing-an-asset-transfer-pledge) on the ledger (or a serialized form of it) corresponding to the `<pledge-id>`. It must validate the recipient network and user identities within the stored pledge against the passed parameter values before returning the information to the caller. It is meant to be used as a lookup function in a cross-network data sharing query (and hence will be accompanied by proof). The recipient's identity must be cryptographically verifiable (typically a certificate).
+- `GetAssetClaimStatus(<pledge-id>, <recipient-user-id>, <pledging-user-id>, <pledging-network-id>, <pledge-expiration-time>)`: This returns the [AssetClaimStatus structure](../../formats/assets/transfer.md#representing-claims-on-pledged-assets) on the ledger (or a serialized form of it) corresponding to a given `<pledge-id>`. It must validate the claimant and pledger (both network and user) information in the claim structure against the passed parameter values, and mark the claim's expiration status (i.e., whether the claim can still be made) by comparing the pledge expiration time with the current time. It is meant to be used as a lookup function in a cross-network data sharing query (and hence will be accompanied by proof). The recipient's identity must be cryptographically verifiable (typically a certificate).
+
+## Prerequisites: Smart Contract Developer Responsibilities
+
+The triggers for each step in the asset transfer flow must come from the distributed applications pledging and acquiring the asset in question. Because the transfer involves ledger updates, the smart contract portion of the application (e.g., chaincode in Hyperledger Fabric, CorDapp contract in Corda) that processes ledger data through consensus must implement and expose (through its transaction API) several functions. See the [Fabric](./fabric.md) and [Corda](./corda.md) specifications for detailed guidelines when developing applications on those platforms. (*Note*: the function names specified in these pages are suggestive; the developer may pick any suitable names.)
+
+The application smart contract or distributed application offering these functions must already have mechanisms to:
+- Uniquely identify assets and fetch their specifications
+- Unambiguously identify the owner(s) of an asset
+- Time lock (or freeze) an asset; i.e., prevent any operations (state or ownership changes) on an asset for a fixed time period
+- Determine whether an asset is currently in the locked state
+
+How the smart contract implements these functions is beyond the purview of Weaver. The functions listed for pledging, claiming, reclaiming, and status queries, will depend on these mechanisms, and it is up the smart contract's developer to implement the asset transfer functions correctly according to the specifications.
+
+## Client API
+
+The Weaver SDK will provide the following API, corresponding to the operations performed by user agents during an asset transfer instance:
+- `PledgeAsset(<contract-id>, <function-name>, <asset-type>, <asset-id-or-quantity>, <recipient-network-id>, <recipient-user-id>, <pledge-expiration-time>)`: This is a convenience function to invoke the operation to pledge an asset in a given application contract. The `<function-name>` may be `PledgeAsset` or `PledgeFungibleAsset` (as suggested in the previous section) or something else.
+- `ClaimRemoteAsset(<pledging-network-id>, <pledging-contract-id>, <pledge-status-function-name>, <pledge-id>, <recipient-user-id>, <contract-id>, <function-name>)`: This is a convenience function to claim an asset based on a known `<pledge-id>`. It involves a cross-network data sharing query (`GetAssetPledgeStatus` or equivalent function) followed by a proof validation and claiming of the asset in the local network (using a `ClaimRemoteAsset` or equivalent function). This functional will internally infer and supply its network ID when making the data sharing query.
+- `ReclaimAsset(<contract-id>, <function-name>, <recipient-network-id>, <recipient-contract-id>, <claim-status-function-name>, <pledge-id>, <pledging-user-id>)`: This is a convenience function to reclaim an asset based on a known `<pledge-id>`. It involves a cross-network data sharing query (`GetAssetClaimStatus` or `GetFungibleAssetClaimStatus` or equivalent function) followed by a proof validation and reclaiming of the asset in the local network (using a `ReclaimAsset` or equivalent function). This functional will internally infer and supply its network ID when making the data sharing query.
+
+In the future, we will also engineer the protocol using [event pub/sub](../events/event-bus.md) rather than manually triggered data sharing queries. In this protocol, the user will only need to exercise the `PledgeAsset` API function; the others will be triggered automatically by events.
+
+## Safety and Liveness
+
+At no point in time is asset *M* available in both the ledgers *A* and *B*. This is ensured by allowing minting of asset by Alice in ledger *A* only if the asset was not already minted by Bob in ledger *B*. Also note that Alice could mint the asset *M* in ledger *A* anytime after the period *t*.
+
+
+## DLT-Specific Designs
+
+Implementation of the protocol is DLT-specific. See the following for details on currently supported DLTs:
+- [Hyperledger Fabric](./fabric.md)
+- [R3 Corda](./corda.md)
+
+
+========== FILE: weaver/rfcs/formats/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Data Structures and Formats
+
+This folder contains specifications of various data structures and formats used in Weaver components and [protocols](../protocols).
+
+Views and view addressing formats are described in the [views](./views) folder.
+
+Structures used in cross-network asset exchange and transfer logic are described in the [assets](./assets) folder.
+
+Message structures used by communication modules like relays and drivers are described in the [communication](./communication) folder.
+
+Policy schemas are described in the [policies](./policies) folder.
+
+Schemas for networks, network units, and identity management, are described in the [network](./network) folder.
+
+
+========== FILE: weaver/rfcs/formats/views/definition.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# View Definition
+
+- RFC: 03-002
+- Authors: Allison Irvin, Antony Targett, Christian Vecchiola, Dileban Karunamoorthy, Ermyas Abebe, Nick Waywood, Venkatraman Ramakrishna, Sandeep Nishad
+- Status: Proposed
+- Since: 02-Jan-2023
+
+## Summary
+
+This document specifies the data structure formats for distributed ledger [views](../../models/ledger/views.md).
+
+## Definition
+
+- View data must be encoded or serialized (see `data` field in view definition below).
+- The default encoding will be just a serialization of DLT-specific view data using standard mechanisms (e.g., for protobuf or JSON).
+- Encodings can be specified by the creator (driver) and specified in the `meta` field in a `View` message.
+
+```protobuf
+message View {
+  Meta meta = 1;
+
+  // Represents the data playload of this view.
+  // The representation of Fabric, Corda etc will be captured elsewhere.
+  // For some protocols, like Bitcoin, the structure of an SPV proof is well known.
+  bytes data = 2;
+}
+```
+The attributes are defined below:
+- `meta` contains metadata of the view.
+- `data` contains the requested data, including ledger data and associated proof.
+
+```protobuf
+message Meta {
+  enum Protocol {
+      BITCOIN = 0;
+      ETHEREUM = 1;
+      FABRIC = 3;
+      CORDA = 4;
+  }
+
+  // Underlying distributed ledger protocol.
+  Protocol protocol = 1;
+
+  // What notion of time?
+  // If the observer and network are synchronizing on a global clock
+  // there won't be a need to distinguish between static and dynamic views.
+  string timestamp = 2;
+
+  // Notorization, SPV, ZKP, etc. Possibly enum
+  string proof_type = 3;
+
+  // The data field's serialization format (e.g. JSON, XML, Protobuf)
+  string serialization_format = 4;
+}
+```
+The attributes are defined below:
+- `protocol` specifies the network protocol of the source (responding) network.
+- `timestamp` the timestamp of the response.
+- `proof_type` describes the type of proof, e.g. Notarization, SPV, ZKP, etc. (*This field may be changed to an enum in the future*). See [proof representation](../../models/ledger/cryptographic-proofs.md) for more details.
+- `serialization_format` specifies the data field's serialization format (e.g. JSON, XML, Protobuf).
+
+## Examples
+
+View returned from a Corda network:
+
+```
+meta {
+  protocol: CORDA
+  timestamp: "Thu Aug 06 03:58:54 GMT 2020"
+  proof_type: "Notarization"
+  serialization_format: "JSON"
+}
+data: "eyJub3Rhcml6YXRpb25zIjpbeyJzaWduYXR1cmUiOiJRYkt4UXFLbHNMSkg4TUM2ZU9GaFEvRUxmdWw3bGJrVnJRVHdtNFhtZmc1eEpYZU56OHh0cXY4YW55Nkg0anlYWHNreUZ4WVdMSVNvc0FmY1VkZDBCQVx1MDAzZFx1MDAzZCIsImNlcnRpZmljYXRlIjoiLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tXG5NSUlCd2pDQ0FWK2dBd0lCQWdJSVVKa1F2bUttMzVZd0ZBWUlLb1pJemowRUF3SUdDQ3FHU000OUF3RUhNQzh4Q3pBSkJnTlZCQVlUQWtkQ01ROHdEUVlEVlFRSERBWk1iMjVrYjI0eER6QU5CZ05WQkFvTUJsQmhjblI1UVRBZUZ3MHlNREEzTWpRd01EQXdNREJhRncweU56QTFNakF3TURBd01EQmFNQzh4Q3pBSkJnTlZCQVlUQWtkQ01ROHdEUVlEVlFRSERBWk1iMjVrYjI0eER6QU5CZ05WQkFvTUJsQmhjblI1UVRBcU1BVUdBeXRsY0FNaEFNTUthUkVLaGNUZ1NCTU16Szgxb1BVU1BvVm1HL2ZKTUxYcS91alNtc2U5bzRHSk1JR0dNQjBHQTFVZERnUVdCQlJNWHREc0tGWnpVTGRRM2MyRENVRXgzVDFDVURBUEJnTlZIUk1CQWY4RUJUQURBUUgvTUFzR0ExVWREd1FFQXdJQ2hEQVRCZ05WSFNVRUREQUtCZ2dyQmdFRkJRY0RBakFmQmdOVkhTTUVHREFXZ0JSNGh3THVMZ2ZJWk1FV3pHNG4zQXh3ZmdQYmV6QVJCZ29yQmdFRUFZT0tZZ0VCQkFNQ0FRWXdGQVlJS29aSXpqMEVBd0lHQ0NxR1NNNDlBd0VIQTBjQU1FUUNJQzdKNDZTeEREejNMakROckVQamp3UDJwcmdNRU1oN3IvZ0pwb3VRSEJrK0FpQStLelhEMGQ1bWlJODZEMm1ZSzRDM3RSbGkzWDNWZ25DZThDT3FmWXl1UWdcdTAwM2RcdTAwM2Rcbi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0ifV0sImRhdGEiOiJXMU5wYlhCc1pWTjBZWFJsS0d0bGVUMUlMQ0IyWVd4MVpUMHhMQ0J2ZDI1bGNqMVBQVkJoY25SNVFTd2dURDFNYjI1a2IyNHNJRU05UjBJc0lHeHBibVZoY2tsa1BUUTBPREptTkdJNExXTXlaak10TkRnelpTMWhaREl4TFdGa1kyWmhZbUV4WkdOaE1pa3NJRk5wYlhCc1pWTjBZWFJsS0d0bGVUMUlMQ0IyWVd4MVpUMHhMQ0J2ZDI1bGNqMVBQVkJoY25SNVFTd2dURDFNYjI1a2IyNHNJRU05UjBJc0lHeHBibVZoY2tsa1BUQm1OV1EwTUdZd0xUUmxPR1V0TkdRME9DMDRaalUxTFRjMk9HWTJORFpoWWpJMk9Ta3NJRk5wYlhCc1pWTjBZWFJsS0d0bGVUMUlMQ0IyWVd4MVpUMHhMQ0J2ZDI1bGNqMVBQVkJoY25SNVFTd2dURDFNYjI1a2IyNHNJRU05UjBJc0lHeHBibVZoY2tsa1BURmhOalk0WVdVMExUTmtPVE10TkRVMU5TMDRNell5TFRWaFpURm1PVFZtTTJRek9Da3NJRk5wYlhCc1pWTjBZWFJsS0d0bGVUMUlMQ0IyWVd4MVpUMHhMQ0J2ZDI1bGNqMVBQVkJoY25SNVFTd2dURDFNYjI1a2IyNHNJRU05UjBJc0lHeHBibVZoY2tsa1BURmlORGM1TW1ZekxUbGxNbUV0TkRBeE9DMDRNemM1TFRrM1pUTmtaR1UzWWpoalppa3NJRk5wYlhCc1pWTjBZWFJsS0d0bGVUMUlMQ0IyWVd4MVpUMHhMQ0J2ZDI1bGNqMVBQVkJoY25SNVFTd2dURDFNYjI1a2IyNHNJRU05UjBJc0lHeHBibVZoY2tsa1BXWTJOekZsTjJOa0xUY3pabVF0TkRVd05pMDVZek5oTFRNNFpHSmlaREZoWVRVMk5Da3NJRk5wYlhCc1pWTjBZWFJsS0d0bGVUMUlMQ0IyWVd4MVpUMHhMQ0J2ZDI1bGNqMVBQVkJoY25SNVFTd2dURDFNYjI1a2IyNHNJRU05UjBJc0lHeHBibVZoY2tsa1BUUXlaRE0yTnpNMkxUazNNVFF0TkRVNE55MWlNR05sTFdGa1pUSTRNekJoTlRjNVpTbGQifQ=="
+```
+
+## Commitment (Future Work)
+
+```protobuf
+message Commitment {
+    // How is the commitment exchanged/located?
+    string address = 3;
+    // Cryptographic commitment scheme
+    string scheme = 1;
+}
+```
+
+We intend to add a commitment field to the `Meta` structure in the future as a mechanism to make public commitments of state with freshness guarantees.
+
+
+
+========== FILE: weaver/core/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Architectural Components for Protocol Implementations
+
+This folder contains implementations of the core capabilities that enable networks to interoperate.
+
+Interoperation modules (for various DLTs) that are implemented in the style of, or emulate, native smart contracts, lie [here](./network).
+
+Functions in the middle of a protocol that enable communication, interpretation, and information processing on behalf of a network are implemented in this folder. These functions may be implemented in a centralized or distributed manner, but because they are communication modules, it is not posssible to implement them as smart contracts.
+
+Implementation of a DLT-agnostic relay module lies [here](./relay).
+
+Implementations of DLT-aware modules for processing of requests and response lie [here](./drivers).
+
+
+========== FILE: weaver/core/relay/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Relay
+
+The implementation of this relay conforms to the specifications outlined in the [rfcs](../../rfcs).
+
+Relay is a daemon for enabling cross-DLT interoperability. Relay implements the *Inter-Relay Protocol*, an RFC to-be of a protocol standard for linking distributed ledgers that implement different ledger protocols. 
+
+## Prerequisites
+
+- [rustup](https://www.rust-lang.org/tools/install)
+
+## Development
+
+To run tests:
+
+`cargo test`
+
+To build project and proto files:
+
+`make build`
+
+To run relay server:
+
+`RELAY_NAME=<relay_name> cargo run --bin server`
+
+For example, the Corda relay can be started with:
+
+`RELAY_CONFIG=config/Corda_Relay.toml  cargo run --bin server`
+
+To run relay dummy client test:
+
+`cargo run --bin client <port-number-of-requesting-relay> <address>`
+
+NOTE: Please read through the addressing specification in the [rfcs](../../rfcs/formats/views/addressing.md). Make sure the network-type has a running supported driver and is specified in the config.
+
+EXAMPLE:
+
+`localhost:9081/Fabric_Network/mychannel:simplestate:read:TestState`
+
+or
+
+`localhost:9081/Dummy_Network/blah`
+
+Corda example:
+
+`localhost:9081/Corda_Network/localhost:10006#com.cordaSimpleApplication.flow.GetStateByKey:H`
+
+## Logging
+We use a simple logger for messaging. In the future we can use ``log4rs``to persist applicational log.
+On the other hand, we persist message flow payloads, but we want to support the [gateway crash-recovery logging procedure](https://www.techrxiv.org/articles/preprint/HERMES_Fault-Tolerant_Middleware_for_Blockchain_Interoperability/14120291).
+
+
+### Settings
+
+The `Settings.toml` file is used for storing configurations as well as acting as the remote relay discovery service.
+
+NOTE: The `RELAY_NAME` environment variable will need to match a value in the `[ports]` table in the `Settings.toml`
+
+### Optional: Live-Reload
+To use live reloading install the following packages
+
+- [cargo-watch](https://github.com/passcod/cargo-watch) binaries
+  - cargo install cargo-watch
+
+Normal live-reload:
+
+`RELAY_NAME=<relay_name> cargo watch -x 'run --bin server'`
+
+## Flows
+
+### data_transfer
+
+Basic data flow between relays.
+
+NOTE: Remote relay name and port arguments need to match valid values in the config file.
+
+To run local relay:
+
+`RELAY_CONFIG=<local_relay_config_path> cargo run --bin server`
+
+To run remote relay:
+
+`RELAY_CONFIG=<remote_relay_config_path> cargo run --bin server`
+
+Run dummy local client:
+
+`cargo run --bin client <port-number-of-requesting-relay> <address>`
+
+For running with the dummy_driver provided by this repo, please refer to the readme in the `/driver` directory
+
+
+### Running and Building with Docker
+
+For details about the building and running relay components in Docker container please see the [Relay Docker Documentation](relay-docker.md).
+
+## Architecture
+
+For architecture, refer to [the architecture document](./architecture.md)
+
+## Testing Philosophy
+
+[Write tests. Not too many. Mostly Integration](https://kentcdodds.com/blog/write-tests)
+
+We also believe that when developing new functions running tests is prefereable than running the application to verify the code is working as expected.
+
+
+========== FILE: weaver/core/relay/architecture.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Relay Architecture
+
+## High level architecture
+
+This high level diagram shows how the relay fits into the overall system and how it communicates with the other components in the system
+
+![High level architecture](./assets/relay-high-level.png)
+
+## Low level architecture
+
+This low level diagram shows the various pieces of the relay and how they interact with each other
+
+![Low level architecture](./assets/relay-low-level.png)
+
+
+========== FILE: weaver/core/relay/relay-config.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Creating Relay Config file
+
+Samples are present in [config](./config) directory. \
+Define environment variable `RELAY_CONFIG`, which stores path to the relay config file.
+
+## Parameters Overview
+
+* **name**: Name of the relay. e.g. `Fabric_Relay`
+* **port**: Port number for relay grpc server. e.g. `9080`
+* **host**: Host address for grpc server. e.g. `0.0.0.0`
+* **db_path** and **remote_db_path**: Not required to change, can (optionally) use Relay name in the path, to uniquely identify path per relay. e.g. `db/<relay-name>/requests` and `db/<relay-name>/remote_request` respectively.
+
+* **TLS**: (Optional) To enable TLS, add:
+    ```
+    cert_path="<tls_cert_path>"
+    key_path="<tls_private_key>"
+    tls=true
+    ```
+
+* **[networks]**: Define list of networks to which this relay will be attached. \
+    Format:
+    ```
+    [networks]
+    [networks.<network-name>]
+    network=<driver-name>
+    ```
+    `<network-name>`: Should match the network name used in relay call and view addresses. It will be used in fabric application when making relay requests. \
+    `<driver-name>`: Should match with the driver name to be used in **[drivers]** parameter (See below). \
+    e.g.:
+    ```
+    [networks]
+    [networks.network1]
+    network="Fabric"
+    [networks.Corda_Network]
+    network="Corda"
+    ```
+    **NOTE**: Most normal deployments have a 1-1 relay-network correspondence, but we also support a 1-many if multiple networks are willing to share a relay. The above config covers the latter case. In most cases, the config file would only contain one network entry.
+* **[relays]**: Define list of all remote relays to which this relay can/should communicate with. \
+    Format: 
+    ```
+    [relays]
+    [relays.<relay-name>]
+    hostname="<relay-hostname>"
+    port="<relay-port>"
+    tls=<true|false>
+    tlsca_cert_path="<relay-tls-ca-certificate-path>"
+    ```
+    `<relay-name>`: Should match with the `name` parameter in remote/other relay's config. \
+    `<relay-hostname>`: Hostname/IP for the remote relay. \
+    `<relay-port>`: Port for the remote relay. \
+    `<relay-tls-ca-certificate-path>`: Path to TLS CA certificate for the <relay-name> relay if it has TLS enabled (i.e., `tls` is set to `true`). \
+    e.g.:
+    ```
+    [relays]
+    [relays.Corda_Relay]
+    hostname="localhost"
+    port="9081"
+    tls=true
+    tlsca_cert_path="credentials/fabric_ca_cert.pem"
+    [relays.Fabric_Relay2]
+    hostname="localhost"
+    port="9083"
+    tls=false
+    tlsca_cert_path=""
+    ```
+* **[drivers]**: Define list of drivers that this relay has ability to invoke/communicate with. \
+    Format: 
+    ```
+    [drivers]
+    [drivers.<driver-name>]
+    hostname="<driver-hostname>"
+    port="<driver-port>"
+    tls=<true|false>
+    tlsca_cert_path="<driver-tls-ca-certificate-path>"
+    ```
+    `<driver-name>`: Should match with the one of the driver names used in **[networks]** list. \
+    `<driver-hostname>`: Hostname/IP for the driver. \
+    `<driver-port>`: Port for the driver. \
+    `<driver-tls-ca-certificate-path>`: Path to TLS CA certificate for the <driver-name> driver if it has TLS enabled (i.e., `tls` is set to `true`). \
+    e.g.:
+    ```
+    [drivers]
+    [drivers.Fabric]
+    hostname="localhost"
+    port="9090"
+    tls=true
+    tlsca_cert_path="credentials/fabric_ca_cert.pem"
+    [drivers.Corda]
+    hostname="localhost"
+    port="9099"
+    tls=false
+    tlsca_cert_path=""
+    ```
+    **Note**: `<driver-name>` has nothing to do with anything related to driver's configuration. It is solely used in relay only. This parameter will also mostly contain one network's driver only, but more than one is supported.
+    
+
+
+========== FILE: weaver/core/drivers/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# DLT-Aware Request-Response Processing
+
+DLT-specific _drivers_ can be used by a network's relay to determine how to satisfy a request or a query coming from a foreign network, and orchestrate the collection of information to send in a response. Though drivers can be designed to be plugins within a relay, our present implementation decouples them into separate services.
+- Implementation of a Fabric driver lies [here](./fabric-driver).
+- Implementation of a Corda driver lies [here](./corda-driver).
+Both these drivers collect data and associated proofs (in the form of digital signatures from distinct network peers) in the cross-network data-sharing protocol.
+
+
+========== FILE: weaver/core/drivers/fabric-driver/readme.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Fabric-Driver
+
+This driver is for communication with a Fabric Network.
+
+This driver implements the Driver Service specified in the [driver.proto file](../../../common/protos/driver/driver.proto).
+
+
+## Development
+
+NOTE: Minimum requirement of npm v5.0 for patch-package to apply the patch for the fabric-network package.
+
+### Setup
+
+Create a `.env` file using `.env.template` as the base and setting suitable environment variable values (see [here](#Environment-variables)) and `config.json` files need to be checked and updated to match the network and relay that it will be connecting to.
+The .env contains information related to the network and relay. The config.json contains information about the ca admin, user and its org, that is used when connecting to the network.
+
+#### Enabling TLS
+
+If the relay is TLS-enabled, set the following values in the `.env`:
+```
+RELAY_TLS=true
+RELAY_TLSCA_CERT_PATH=path_to_tls_ca_cert_pem_for_relay
+```
+- `path_to_tls_ca_cert_pem_for_relay` should be set to CA certificate file path
+
+To enforce secure communication over TLS with your driver, set the following values in the `.env`:
+```
+DRIVER_TLS=true
+DRIVER_TLS_CERT_PATH=path_to_tls_cert_pem_for_driver
+DRIVER_TLS_KEY_PATH=path_to_tls_key_pem_for_driver
+```
+- `path_to_tls_cert_pem_for_driver` should be set to driver's TLS certificate file path
+- `path_to_tls_key_pem_for_driver` should be set to driver's TLS private key file path
+
+If the driver is deployed within a Docker container, set the same variables as above in the appropriate `.env` file. The following sample files in [./docker-testnet-envs/](./docker-testnet-envs) can be used and tweaked for Fabric drivers associated with particular testnets:
+- Fabric `network1`: `.env.n1` (non-TLS) and `.env.n1.tls` (TLS)
+- Fabric `network2`: `.env.n2` (non-TLS) and `.env.n2.tls` (TLS)
+
+### Running
+
+To do a full build run then `make build-local`. This update/clones protos, generates js protos and compiles TypeScript.
+
+For tsc compilation in watch mode: `npm run watch`
+
+Running the server: `npm run dev`
+
+Note: Can also be run in mocked mode by setting environment variable `MOCK=true`
+
+## Deployment
+
+Make sure the env and config file have the expected values.
+
+Update the docker compose with the correct external network and ports exposed
+
+To do a full build run `make build-image`. This update/clones protos, generates js protos and compiles typescript.
+
+To deploy, run `make deploy`
+
+**Sample steps to use docker deployment:**
+
+* Create a Personal Access Token with read packages access in github. Refer [Creating a Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token) for help.
+* Run `docker login ghcr.io` and use your github username and personal access token as password.
+* Copy `.env.docker.template` to `.env` and make changes appropriately (like correcting the base path of repo, changing network name if required etc, check image details here: [cacti-weaver-fabric-driver](https://github.com/hyperledger-cacti/cacti/pkgs/container/cacti-weaver-fabric-driver)).
+* Make sure connection profile used for docker, containers correct hostnames instead of localhost in urls.
+* If deploying more than one driver on same host, make sure to change service name in docker compose to avoid conflicts.
+* Finally run `docker compose up -d` to deploy the fabric driver.
+
+
+### TL/MP Environment
+
+If you are spinning up the driver for the first time and plan to use docker in the TL/WT environemnt, either run the driver locally to generate the wallet, or copy across the wallet generated by the WT/TL application. This is to prevent issues with the CA denying creation of a new wallet. An alternative solution in the case that you have spun up the driver with docker without creating a wallet is to bash into the docker container and copy the contents of the created wallet and put them in the fabric-driver folder.
+The driver could be improved to have a way to revoke the prexisting identity in the CA and create a new one to avoid this issue.
+
+
+## Environment variables
+
+The connection profile is required to set up the required material to communicate with the network. This should be supplied with the `CONNECTION_PROFILE` environment variable (ex: CONNECTION_PROFILE=path/to/con_profile.json)
+
+`<Hostname>:<Port>` for connecting relay: `RELAY_ENDPOINT` (ex: RELAY_ENDPOINT=localhost:9081 )
+
+Boolean for when to use mocked fabric communication: `MOCK` (ex: MOCK=true)
+
+`<Hostname>:<Port>` for the driver to be run on: `DRIVER_ENDPOINT` (ex: DRIVER_ENDPOINT=localhost:9093) (Not required for docker)
+
+Can pass in a variable 'local' for working with fabric and docker: `local` (ex: local=false)
+
+Can pass in a config file for the driver to be run with: `DRIVER_CONFIG` (ex: DRIVER_CONFIG=./config.json)
+
+`INTEROP_CHAINCODE` stores the name of the interop chaincode installed.
+
+`DB_PATH` stores the path hosting the database files containing the event subscription information.
+
+`WALLET_PATH` stores the path hosting the user wallets to access a network.
+
+NOTE: When specifying ensure that they match the config that the relay is using.
+
+**For docker-compose:***
+
+* `DOCKER_IMAGE_NAME`, and `DOCKER_TAG` needs to specified based on [cacti-weaver-fabric-driver](https://github.com/hyperledger-cacti/cacti/pkgs/container/cacti-weaver-fabric-driver) image.
+* `DRIVER_PORT` is the driver server port.
+* `EXTERNAL_NETWORK` is the docker network in which fabric-network is running.
+
+## Push Fabric Driver image to Github container registry
+
+* Create a Personal Access Token with write, read, and delete packages access in github. Refer [Creating a Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token) for help.
+* Run `docker login ghcr.io` and use your github username and personal access token as password.
+* Create a copy of `.npmrc.template` as `.npmrc`.
+* Replace <personal-access-token> in copied `.npmrc` file with your personal access token.
+* Run `make push-image` to build and push the image to github registry.
+
+**NOTE:** Push image to `hyperledger-labs` only after PR approval, first test it by deploying it on your fork by running (instead of last step above): `make push-image DOCKER_REGISTRY=ghcr.io/<username>`, where replace `<username>` with your git username.
+
+## Known Issues
+
+If running an old version of linux or experiancing this issue
+
+```
+/lib64/libstdc++.so.6: version `CXXABI_1.3.8' not found
+```
+
+Install libstdc++.so library that is  CXXABI_1.3.8 version
+Update /lib64 folder with the new library or replace the existing link
+
+
+## NOTE
+
+Due to how fabric works and the CA works once a wallet has been created with identities in the CA you can not create new wallet without fist revoking the original credentials. This can have some issues if you have deleted a wallet and are trying to recreate one.
+
+
+========== FILE: weaver/samples/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Sample DLT Applications
+
+This folder houses implementations of various applications, ranging from toys to production-grade, on different DLTs that can be used to illustrate one or more interoperation scenario (i.e., protocol).
+
+Presently, we have implemented a simple CorDapp for testing purposes [here](./corda-simple-application).
+
+A new subfolder must be created here for every distinct self-contained application.
+
+
+========== FILE: weaver/sdks/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# DLT-Specific Libraries and Tools for Network Applications
+
+Blockchain/DLT applications typically have a multi-layer architecture, with user- or organization-specific services layered over smart contracts. Hyperledger Fabric offers SDKs in Node.js (JavaScript and TypeScript), Java, and Go. Different flavors of Ethereum offer a variety of tools to build Dapps (e.g., Truffle). Corda similarly offers a framework to build CorDapps.
+
+Because in our vision, interoperability is a core capability of a network to be exercised when needed, we need to offer libraries, tools, and SDK extensions whereby existing applications can be augmented to be interoperable, and new applications can be developed using these features.
+
+Presently, we have implemented a library for Fabric applications developed in Node.js (i.e., using the Fabric Node SDK) [here](./fabric/interoperation-node-sdk).
+
+A new subfolder must be created here to house libraries, tools, and SDK extensions for every distinct DLT supported by our protocols for interoperability. Therefore, any support for Besu app or CorDapp developers will be housed in separate folders, while support for Java app developers on Fabric should lie in a distinct subfolder within [this folder](./fabric/).
+
+
+========== FILE: weaver/tests/README.md ==========
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+# Integration Tests and Testbeds for the Interoperation Framework
+
+This folder houses everything test-related, including cross-component integration tests and different kinds of testbeds for experimentation. In the future, it may also contain performance measurement and benchmarking code.
+
+Presently, we have implemented a _testnet_ that allows a user to launch up to three networks: two built on Fabric and one on Corda, each with interoperation-enabling components. Applications adapted for interoperation can then be deployed and flows involving the sharing of data with proof across a pair of networks tested. The code for this testnet lies [here](./network-setups).
+
+A new subfolder must be created here to house any self-contained testbed like `network-setups` or integration test suite that serves a distinct purpose.

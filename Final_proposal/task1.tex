@@ -1,0 +1,165 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{left=1.5cm, right=1.5cm, top=2.5cm, bottom=2cm}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{fontawesome5}
+\usepackage{eso-pic}
+
+% Shared info
+\input{personal-info}
+
+% Colors
+\definecolor{primary}{RGB}{0, 51, 102}
+\definecolor{secondary}{RGB}{14, 156, 126}
+\definecolor{lightgrayblue}{RGB}{230, 240, 250}
+\definecolor{codebg}{RGB}{245, 248, 250}
+
+% Section styling
+\titleformat{\section}
+{\normalfont\Large\bfseries\color{primary}}
+{\thesection}{1em}{}
+\titleformat{\subsection}
+{\normalfont\large\bfseries\color{primary}}
+{\thesubsection}{1em}{}
+
+% Page style
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\textcolor{secondary}{\thepage}}
+\renewcommand{\headrulewidth}{0pt}
+
+% Hyperlinks
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    urlcolor=secondary
+}
+
+% Paragraph spacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.8em}
+
+\newcommand{\tasktitle}{Task 2 --- Run a Cacti Demo End to End}
+\newcommand{\tasksubtitle}{Standalone task write-up in the same visual style as the main application packet}
+
+\newcommand{\taskheader}{%
+    \AddToShipoutPictureBG*{%
+        \color{lightgrayblue}
+        \AtPageUpperLeft{\rule[-1.7in]{\paperwidth}{1.7in}}
+    }
+    \vspace*{-1.5cm}
+    \coverletterheader
+    \vspace{0.7cm}
+    \begin{center}
+        {\color{primary}\LARGE\textbf{\tasktitle}}\\[0.25cm]
+        {\color{secondary}\large \tasksubtitle}
+    \end{center}
+    \vspace{0.4cm}
+    {\color{primary}\textbf{Program:}} \program \\
+    {\color{secondary}\textbf{Candidate:}} \myname \\
+    {\color{primary}\textbf{Demo Theme:}} Hyperledger Cacti interoperability demo \\
+    {\color{secondary}\textbf{Document Type:}} Individual task response
+    \vspace{0.6cm}
+    \begin{center}
+        \textcolor{secondary}{\rule{0.9\textwidth}{0.4pt}}
+    \end{center}
+    \vspace{0.3cm}
+}
+
+\newcommand{\screenshotplaceholder}[1]{%
+    \fbox{%
+        \begin{minipage}[c][5.5cm][c]{0.92\linewidth}
+            \centering
+            {\color{primary}\large\textbf{Screenshot Placeholder}}\\[0.3cm]
+            {\color{secondary}#1}\\[0.2cm]
+            \small Replace this box with an actual screenshot using \texttt{\textbackslash includegraphics}.
+        \end{minipage}%
+    }%
+}
+
+\begin{document}
+
+\taskheader
+
+\section*{Task Brief \hfill \textcolor{secondary}{\rule{0.25\textwidth}{0.3pt}}}
+This document is a standalone write-up for an individual selection task. It is intentionally separate from \texttt{main.tex}, but it reuses the same typography, color palette, header treatment, and overall visual language so it still feels like part of the same application set.
+
+The task is to pick a demo from the Hyperledger Cacti demo collection, run it end to end, and explain why it was interesting, what happened technically, and what concrete lessons came out of it.
+
+\section*{Chosen Demo \hfill \textcolor{secondary}{\rule{0.23\textwidth}{0.3pt}}}
+For this sample write-up, I chose a Cacti interoperability demo centered on moving information across two different blockchain environments. I was drawn to it because it is the clearest expression of what makes Cacti interesting: instead of treating each ledger as an isolated island, it shows how Cacti coordinates identity, connectors, APIs, and transaction flows so an application can interact with multiple chains through one integration layer.
+
+I also liked this demo because it is practical rather than purely conceptual. It does not just say that interoperability is possible; it walks through containers starting up, services discovering one another, APIs receiving requests, and observable state changes appearing at the end of the flow.
+
+\section*{What Drew Me to This Demo? \hfill \textcolor{secondary}{\rule{0.2\textwidth}{0.3pt}}}
+What drew me to this demo was that it sits exactly at the point where distributed systems become real engineering rather than theory. A simple single-ledger demo can prove that one framework works, but a Cacti demo is more interesting because it forces multiple systems to coordinate correctly: ledger clients, connector services, API gateways, identities, signing, and transport all have to line up.
+
+This made the demo appealing from both a learning and evaluation standpoint. If the demo works end to end, it gives confidence that the platform is not only deployable but also understandable in terms of how components communicate. That is especially valuable for mentorship work, because it tests whether I can move beyond reading documentation and actually trace system behavior in a running environment.
+
+\section*{What Happened Under the Hood? \hfill \textcolor{secondary}{\rule{0.2\textwidth}{0.3pt}}}
+At a technical level, the demo starts a small multi-service environment, typically with Docker Compose, where each container plays a specific role. One set of containers represents the ledger backends or their local test networks. Another set exposes Cacti connector services that know how to talk to those ledgers using the correct SDKs, credentials, and transaction formats. On top of that, an application or API layer issues requests that trigger cross-ledger operations.
+
+When I ran the demo, the important thing was not only that the final action succeeded, but that the intermediate pieces each had a visible responsibility. The app layer sent a request, the Cacti services routed it to the relevant connector, the connector translated that request into ledger-specific calls, and the ledger state or response confirmed that the transaction had been executed. In other words, Cacti acted as the orchestration and abstraction layer between heterogeneous systems rather than as a blockchain itself.
+
+The demo also highlighted operational details that matter in real deployments: containers must start in the right order, health checks and service availability matter, credentials must be loaded correctly, and logs are often the fastest way to understand where a failed flow is breaking down. Watching the system come up end to end made the architecture much easier to internalize than reading the repository statically.
+
+\section*{What Did I Learn? \hfill \textcolor{secondary}{\rule{0.28\textwidth}{0.3pt}}}
+I came away with two concrete takeaways:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Interoperability is mostly orchestration discipline.} The hard part is not only writing ledger logic; it is defining clear boundaries between connectors, application code, credentials, transport, and observability so the full flow stays debuggable.
+    \item \textbf{Logs are part of the product experience.} In a distributed demo, the real understanding comes from correlating outputs across services. Good logging makes the difference between ``the demo worked'' and ``I understand why it worked.''
+\end{enumerate}
+
+More broadly, the exercise reinforced that Cacti is best understood as integration infrastructure. Its value is not tied to one chain or one SDK; it comes from giving developers a structured way to build workflows that span multiple blockchain systems without collapsing into custom glue code everywhere.
+
+\section*{Screenshots \hfill \textcolor{secondary}{\rule{0.32\textwidth}{0.3pt}}}
+The final submission should include at least two screenshots from the actual demo run. For now, this standalone template includes compile-safe placeholders so the file can build immediately even before the images are added.
+
+\begin{figure}[ht]
+    \centering
+    \screenshotplaceholder{Demo containers and services starting successfully}
+    \caption{Screenshot 1: startup logs or dashboard view from the running demo.}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \screenshotplaceholder{Final transaction output, API response, or ledger state change}
+    \caption{Screenshot 2: evidence of the end-to-end flow completing successfully.}
+\end{figure}
+
+\section*{Notes for Final Customization \hfill \textcolor{secondary}{\rule{0.18\textwidth}{0.3pt}}}
+To turn this into the final task submission:
+
+\begin{itemize}[leftmargin=*]
+    \item Replace the sample paragraphs with observations from the specific demo you actually ran.
+    \item Swap each placeholder box with a real image using \texttt{\textbackslash includegraphics} and your screenshot file path.
+    \item If needed, change the metadata in the header so it matches the exact task number or demo name.
+\end{itemize}
+
+\vfill
+
+\begin{flushleft}
+    \textbf{\color{primary}Prepared by,} \\
+    \vspace{0.2cm}
+    {\color{primary}\Large \textbf{\myname}} \\
+    {\color{secondary}\mydegree}
+\end{flushleft}
+
+\end{document}

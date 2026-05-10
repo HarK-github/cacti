@@ -1,0 +1,1915 @@
+========== FILE: docs/README.md ==========
+# Hyperledger Cacti Documentation
+
+This directory contains the source for the Hyperledger Cacti documentation
+site. It uses MkDocs (documentation at [mkdocs.org](https://www.mkdocs.org)),
+the Material for MkDocs theme, and the Mike plugin for versioned deployments to
+GitHub Pages.
+
+[Material for MkDocs]: https://squidfunk.github.io/mkdocs-material/
+[Mike]: https://github.com/jimporter/mike
+
+## Prerequisites
+
+To preview the docs locally and update the published site, the following tools
+are needed:
+
+- A Bash shell
+- git
+- Python 3
+- The [Material for Mkdocs] theme.
+- The [Mike] MkDocs plugin for publishing versions to gh-pages.
+  - Not used locally, but referenced in the `mkdocs.yml` file and needed for
+    deploying the site to gh-pages.
+
+### git
+`git` can be installed locally, as described in the [Install Git Guide from GitHub](https://github.com/git-guides/install-git).
+
+### Python 3
+`Python 3` can be installed locally, as described in the [Python Getting Started guide](https://www.python.org/about/gettingstarted/).
+
+### MkDocs
+
+The MkDocs-related items can be installed locally, as described in the
+[Material for MkDocs] installation instructions. The short, case-specific
+version for this repository is:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Verify Setup
+
+To verify your setup, run `mkdocs --help` and confirm the help text is shown.
+
+## Useful MkDocs Commands
+
+The commands you will usually use with `mkdocs` are:
+
+* `mkdocs serve` - Start the live-reloading docs server.
+* `mkdocs build` - Build the documentation site.
+* `mkdocs -h` - Print help message and exit.
+* `mkdocs gh-deploy` - Build and push documents to `gh-pages` branch, and publish to URL configured in `mkdocs.yml`.
+
+## Adding Content
+
+The basic process for adding content to the site is:
+
+- Create a new markdown file under the `docs` folder
+- Add the new file to the table of contents (`nav` section in the `mkdocs.yml` file)
+
+## Repository layout
+
+    mkdocs.yml    # The configuration file.
+    docs/
+        index.md  # The documentation homepage.
+        ...       # Other markdown pages, images and other files.
+
+
+========== FILE: docs/docs/index.md ==========
+# A Pluggable Interoperability Toolkit for Blockchain and DLT Networks
+
+![Cacti Logo Color](./images/HL_Cacti_Logo_Color.png#gh-light-mode-only){: style="height:70%;width:70%"}
+![Cacti Logo Color](./images/HL_Cacti_Logo_Colorreverse.svg#gh-dark-mode-only){: style="height:70%;width:70%"}
+
+Cacti is a multi-faceted pluggable interoperability framework to link networks built on heterogeneous distributed ledger and blockchain technologies and to run transactions spanning multiple networks. It offers a collection of vendor-neutral and DLT-specific modules, libraries, and SDKs for popular DLTs, and templates to help you configure your networks and adapt your DApps to interoperate with other networks and their DApps for the purposes of carrying out atomic asset swaps, asset transfers, sharing ledger state, and other use cases. Cacti does not require deployment of, or dependence on, separate chains, and therefore is uniquely suited to help private (or permissioned) DLT networks be interoperable while keeping control of their governance and maintaining security and privacy.
+
+Cacti is the product of a [merger](https://www.hyperledger.org/blog/2022/11/07/introducing-hyperledger-cacti-a-multi-faceted-pluggable-interoperability-framework) between the pre-existing Cactus and Weaver Lab projects, bringing together two code bases with overlapping as well as complementary feature sets under a common umbrella repository. The core (and shared) design philosophy of Cacti is the enablement of interoperability in a manner that preserves the self-sovereignty of existing networks while providing consensus-driven control over cross-network interactions, does not require modifications to existing DLT stacks, and eschews reliance on third-party chains. Cacti covers the spectrum of generic interoperability modes required to fulfil cross-network transactions, namely asset exchanges, asset transfers, and ledger data sharing.
+
+Cacti is built on a modular architecture and supports extensions through the plugin model. It maintains certain core components that are independent of DLTs, and also packages (called _connectors_ or _drivers_) and libraries for specific DLTs. The following blockchains and DLTs are presently supported to varying extents within the repository:
+
+* Hyperledger Besu
+* Hyperledger Fabric
+* Hyperledger Indy
+* Hyperledger Iroha
+* Hyperledger Sawtooth
+* R3 Corda
+* Go-Ethereum
+* Xdai
+
+Client libraries and examples are provided in the following languages: JavaScript/TypeScript, Golang, Java/Kotlin, Solidity.
+
+## Useful links
+
+* [Vision](./vision.md)
+* [Architecture](./architecture.md)
+* [Cactus whitepaper](https://github.com/hyperledger-cacti/cacti/blob/main/whitepaper/whitepaper.md)
+* [Weaver RFCs](https://github.com/hyperledger-cacti/cacti/tree/main/weaver/rfcs)
+* [Running pipelines with Cactus packages](./cactus/)
+* [Running pipelines with Weaver packages](./weaver/)
+* [Open API Specifications](./references/openapi/index.md)
+
+!!! note
+
+    If you have questions not addressed by this documentation, or run into issues with any of the tutorials, please [reach out](./contact-us.md) to the Cacti maintainers (and community).
+
+
+========== FILE: docs/docs/architecture.md ==========
+The Cacti integrated architecture is illustrated below.
+
+<img src="../images/cacti-architecture-v2-integration.png">
+
+This consists of a set of modules, services (offering standard APIs), and libraries that offer a selection of cross-network transaction pipelines, which can be constructed by picking and choosing from the collection.
+
+The integrated architecture was generated by fusing the pre-existing Cactus and Weaver architectures, identifying and re-labeling common (or overlapping) components and calling out unique components separately.
+
+For reference, here is the Cactus architecture.
+
+<img src="../images/cactus-architecture.png">
+
+And here is the Weaver architecture.
+
+<img src="../images-weaver/weaver-architecture.png">
+
+
+========== FILE: docs/docs/vision.md ==========
+## Mission and Objectives
+
+Cacti aims to make the process of interoperation, interconnection, and integration of systems built on blockchain or DLT with each other (or with centralized systems) easy, controllable, trustworthy, and decentralized. It will allow networks to remain self-sovereign and evolve independently without losing the ability to link with other networks and manage digital assets across networks when required. In effect, it enables a _network-of-networks_, or a global scale decentrantralized system of networks (akin to the Internet) without forcing all networks to coalesce, or subscribe to, a single canonical chain.
+
+## Project Scope
+
+The existence of several blockchain and distributed ledger technologies of different flavors in the market as well as networks of varying scopes and sizes built on them necessitates the need for interoperability and integration, lest we end up with a fragmented ecosystem where digital assets and the workfows (often contracts) governing them remain isolated in silos. The solution to this is not to force all chains to coalesce (i.e., "*a single chain to rule them all*") but rather enable the networks to orchestrate transactions spanning their boundaries without sacrificing security, privacy, or governance autonomy (i.e., self-sovereignty). Hyperledger Cacti offers a family of protocols, modules, libraries, and SDKs, that can enable one network to be interoperable with, and carry out transactions directly with, another while eschewing the need for a central or common settlement chain. Cacti will allow networks to share ledger data, and exchange and transfer assets atomically, and manage identities, across their boundaries, as illustrated in the figure below.
+
+<img src="../images/cacti-vision.png">
+
+As a fusion of two earlier systems (Cactus and Weaver) that have similar philosophies and goals, yet offer distinct mechanisms backed by differemt design and trust assumptions, Cacti offers a spectrum of selectable and configurable features for cross-network transaction orchestrations. An example illustrated below shows how distributed applications running on Fabric and Besu ledgers respectively can carry out the same set of cross-network transactions using the **Node Server** (Cactus legacy) or through **Relays** (Weaver legacy).
+
+<img src="../images/tx-orchestration-modes.png">
+
+The present (initial) version of the Cacti code base is simply an aggregation of the legacy Cactus and Weaver code bases with their original folder structures. Until merge and integration (see further below), users should examine, test, and use them separately as follows:
+- Cactus code and documentation lies within this (root) folder, excluding the `weaver` folder. See [Cactus documentation](./README-cactus.md) to test and use Cactus.
+- Weaver code and documentation lies within the [weaver](./weaver/) folder. See [Weaver documentation](./weaver/README.md) to test and use Weaver.
+
+## Project Roadmap
+
+You can find the project roadmap in the [GitHub repository](https://github.com/hyperledger-cacti/cacti/blob/main/ROADMAP.md).
+
+
+========== FILE: docs/docs/README.md ==========
+[FILE NOT FOUND]
+
+
+========== FILE: docs/docs/cactus/introduction.md ==========
+Welcome to Hyperledger Cactus documentation!
+=========================================================================================================================
+
+Hyperledger Cactus aims to provide Decentralized, Secure and Adaptable Integration between Blockchain Networks. Hyperledger Cactus is currently undergoing a major refactoring effort to enable the desired to-be architecture which will enable plug-in based collaborative development to increase the breadth of use cases & Ledgers supported.
+
+**What is Cactus?**
+
+A pluggable, enterprise-grade framework to transact on multiple distributed ledgers without introducing yet another competing blockchain.
+
+> *   Cactus allows developers to abstract the application layer from the DLT addressing protocol fragmentation, lowering coupling and reducing implementation risks​
+>     
+> *   Cactus allows different DLT networks to interact with each other, through atomic transactions and state commits, this eliminates information silos and increases network’s value​
+>     
+
+**Why use Cactus?**
+
+> *   Maximize flexibility and future-proofing through plug-in architecture. ​
+>     
+> *   Avoid needing explicit action from users to have a secure Cactus deployment. Policies such as vaults are built into the SDK​
+>     
+> *   Keys and other credentials are not stored in source, configuration files, or environment variables​
+>     
+> *   Preserving Ledger Features Horizontal Scalability.​
+>     
+
+[Next](build.md "Hyperledger Cactus Build Instructions")
+
+* * *
+
+
+========== FILE: docs/docs/cactus/architecture.md ==========
+[FILE NOT FOUND]
+
+
+========== FILE: docs/docs/weaver/introduction.md ==========
+---
+id: introduction
+title: Weaver Framework
+---
+
+<!--
+ Copyright IBM Corp. All Rights Reserved.
+
+ SPDX-License-Identifier: CC-BY-4.0
+ -->
+
+Weaver is a framework that enables scalable interconnectivity between disparate distributed ledgers in a manner that preserves core tenets of decentralisation and security.
+The framework, consisting of a family of protocols, is designed and built with the following key guiding principles, which are further discussed in [Design Principles](design-principles.md):
+
+- **Inclusiveness**: Avoid approaches that are specific to a particular DLT implementation and design.
+- **Independence**: Interoperable networks retain sovereignty on their own processes and access control rules.
+- **Minimum Trust**: Reduce trust to only what is essentials (i.e. identity providers in the network).
+- **Privacy by Design**: Interaction between parties across networks should be kept private and confidential and revealed only to the interested parties.
+- **No Intermediaries**: No third-party intermediary should be relied upon for the purpose of cross-network data verification or settlement.
+- **Minimal Shared Infrastructure**: Rely on external infrastucture only for discovery, identification, and tracking/auditing, and not for cross-network transactions.
+- **Leverage Consensus**: Use the respective ledgers' native distributed consensus mechanisms as the trust basis for cross-network transactions.
+- **Non-Intrusion**: Require no changes to the DLT platforms and consensus mechanisms on which the networks are built, nor any dilution of the networks' security models.
+- **Transparency**: Facilitate tracking and auditing of cross-network transactions.
+
+The protocol is designed around the following key elements:
+
+1. *State Proofs*: these allow a network to independently verify that any state it consumes from another network is valid according to the rules and policies of that network, or adheres to validity policies it imposes on state from that network.
+2. *Asset Locks and Claims*: these allow a network to freeze an asset for a given time period on behalf of a user or allow a user to claim a frozen asset from its previous owner, either within a network or from a different network.
+3. *Relays*: these are decentralised peer-to-peer services that enable communication of messages between networks.
+
+Weaver has a specification outlined through a set of [RFCs](specifications.md) and a reference implementation of that specification, which is discussed in this documentation.
+
+
+========== FILE: docs/docs/contributing/README.md ==========
+[FILE NOT FOUND]
+
+
+========== FILE: docs/docs/guides/getting-started.md ==========
+# Getting Started with Hyperledger Cacti
+
+Welcome to Hyperledger Cacti! This guide will help you understand the framework and choose the right level of integration for your project.
+
+## Table of Contents
+
+- [Understanding Cacti's Architecture](#understanding-cactis-architecture)
+- [What is Cacti vs What Isn't](#what-is-cacti-vs-what-isnt)
+- [Choosing Your Level of Immersion](#choosing-your-level-of-immersion)
+- [Level 1: Connector as a Library](#level-1-connector-as-a-library-lowest-immersion)
+- [Level 2: API Server with Plugins](#level-2-api-server-with-plugins-medium-immersion)
+- [Level 3: Full Framework Integration](#level-3-full-framework-integration-highest-immersion)
+- [Deciding Which Level is Right for You](#deciding-which-level-is-right-for-you)
+
+---
+
+## Understanding Cacti's Architecture
+
+Cacti is a **modular, pluggable framework** for blockchain interoperability. Pick and choose the components you need for your use-case.
+
+### Technology Stack Diagram
+
+![Cacti Technology Stack](../../assets/cacti-architecture-stack.png)
+
+---
+
+## What is Cacti vs What Isn't
+
+Understanding what Cacti provides (and what it doesn't) is crucial for successful integration.
+
+### ✅ What IS Cacti
+
+| Component | Description | Package |
+|-----------|-------------|---------|
+| **Ledger Connectors** | Plugins that abstract interaction with specific blockchains | `@hyperledger/cactus-plugin-ledger-connector-*` |
+| **Keychain Plugins** | Secure credential storage (Vault, AWS SM, Azure KV, Memory) | `@hyperledger/cactus-plugin-keychain-*` |
+| **API Server** | Express-based server that hosts plugins and exposes REST/gRPC APIs | `@hyperledger/cactus-cmd-api-server` |
+| **Core API** | Common interfaces, types, and abstractions | `@hyperledger/cactus-core-api` |
+| **Common Utilities** | Logging, HTTP, and shared utilities | `@hyperledger/cactus-common` |
+| **Plugin Registry** | Mechanism to register and discover plugins | `@hyperledger/cactus-core` |
+| **Cross-Chain Protocols** | SATP (Hermes), Weaver, COPM for interoperability | `@hyperledger/cactus-plugin-satp-hermes`, etc. |
+| **Consortium Management** | Multi-organization coordination | `@hyperledger/cactus-plugin-consortium-*` |
+| **Test Tooling** | Docker-based test ledgers and utilities | `@hyperledger/cactus-test-tooling` |
+
+### ❌ What is NOT Cacti (in the examples)
+
+| Component | Description | What You'll See in Examples |
+|-----------|-------------|----------------------------|
+| **Frontend Application** | The web UI | React/Angular apps in `examples/*-frontend` |
+| **Your Business Logic** | Domain-specific rules and workflows | Custom code in `examples/*-business-logic-plugin` |
+| **Your REST API endpoints** | Application-specific endpoints | Routes defined in your business logic |
+| **Database** | Persistent storage for your app | Your choice (PostgreSQL, MongoDB, etc.) |
+| **Authentication Provider** | Your identity management | Keycloak, Auth0, custom JWT, etc. |
+
+---
+
+## Choosing Your Level of Immersion
+
+| Level | Use Case | Complexity | What You Get |
+|-------|----------|------------|--------------|
+| **Level 1** | You have an existing Node.js app and just need blockchain connectivity | Low | Connector as npm dependency |
+| **Level 2** | You have a non-Node.js app or want containerized blockchain access | Medium | API server with REST/gRPC endpoints |
+| **Level 3** | You want a complete blockchain-integrated application framework | High | Full stack with business logic plugins |
+
+---
+
+## Level 1: Connector as a Library (Lowest Immersion)
+
+**Best for:** Existing Node.js/TypeScript projects that need to interact with a blockchain.
+
+### What You Get
+
+- Direct programmatic access to blockchain operations
+- Type-safe API with TypeScript definitions
+- No additional infrastructure required
+
+### What You Provide
+
+- Your existing application architecture
+- Your own API endpoints (if needed)
+- Your own authentication and authorization
+
+### Architecture
+
+![Level 1 - Connector as Library](../../assets/level1-connector-flow.png)
+
+### Tutorial: Using the Ethereum Connector in Your Existing Project
+
+#### Step 1: Install Dependencies
+
+```bash
+# In your existing Node.js project
+npm install @hyperledger/cactus-plugin-ledger-connector-ethereum
+npm install @hyperledger/cactus-core
+npm install @hyperledger/cactus-common
+```
+
+#### Step 2: Create and Configure the Connector
+
+```typescript
+// src/blockchain/ethereum-client.ts
+import {
+  PluginLedgerConnectorEthereum,
+  Web3SigningCredentialType,
+  DefaultApi as EthereumApi,
+} from "@hyperledger/cactus-plugin-ledger-connector-ethereum";
+import { PluginRegistry } from "@hyperledger/cactus-core";
+import { v4 as uuidv4 } from "uuid";
+
+export class EthereumClient {
+  private connector: PluginLedgerConnectorEthereum;
+
+  constructor(rpcApiHttpHost: string) {
+    // Create the connector - this is the only Cacti component you need!
+    this.connector = new PluginLedgerConnectorEthereum({
+      instanceId: uuidv4(),
+      rpcApiHttpHost: rpcApiHttpHost,
+      pluginRegistry: new PluginRegistry(),
+      logLevel: "INFO",
+    });
+  }
+
+  /**
+   * Deploy a smart contract to the Ethereum network
+   */
+  async deployContract(
+    bytecode: string,
+    abi: unknown[],
+    privateKey: string,
+    ethAccount: string,
+  ): Promise<string> {
+    const result = await this.connector.deployContract({
+      bytecode,
+      contractAbi: abi,
+      web3SigningCredential: {
+        type: Web3SigningCredentialType.PrivateKeyHex,
+        ethAccount,
+        secret: privateKey,
+      },
+      gas: 1000000,
+    });
+    return result.transactionReceipt?.contractAddress ?? "";
+  }
+
+  /**
+   * Invoke a contract method (state-changing transaction)
+   */
+  async invokeContract(
+    contractAddress: string,
+    contractAbi: unknown[],
+    methodName: string,
+    params: unknown[],
+    privateKey: string,
+    ethAccount: string,
+  ): Promise<unknown> {
+    return this.connector.invokeContract({
+      contractAddress,
+      contractAbi,
+      invocationType: "SEND",
+      methodName,
+      params,
+      web3SigningCredential: {
+        type: Web3SigningCredentialType.PrivateKeyHex,
+        ethAccount,
+        secret: privateKey,
+      },
+      gas: 1000000,
+    });
+  }
+
+  /**
+   * Query a contract method (read-only call)
+   */
+  async queryContract(
+    contractAddress: string,
+    contractAbi: unknown[],
+    methodName: string,
+    params: unknown[],
+  ): Promise<unknown> {
+    return this.connector.invokeContract({
+      contractAddress,
+      contractAbi,
+      invocationType: "CALL",
+      methodName,
+      params,
+      web3SigningCredential: {
+        type: Web3SigningCredentialType.None,
+      },
+    });
+  }
+}
+```
+
+#### Step 3: Use in Your Application
+
+```typescript
+// src/services/asset-service.ts
+import { EthereumClient } from "../blockchain/ethereum-client";
+import AssetContract from "../contracts/Asset.json";
+
+export class AssetService {
+  private ethereumClient: EthereumClient;
+  private contractAddress: string;
+
+  constructor() {
+    this.ethereumClient = new EthereumClient(process.env.ETHEREUM_RPC_URL!);
+    this.contractAddress = process.env.ASSET_CONTRACT_ADDRESS!;
+  }
+
+  async createAsset(
+    assetId: string,
+    owner: string,
+    privateKey: string,
+    ethAccount: string,
+  ): Promise<void> {
+    await this.ethereumClient.invokeContract(
+      this.contractAddress,
+      AssetContract.abi,
+      "createAsset",
+      [assetId, owner],
+      privateKey,
+      ethAccount,
+    );
+  }
+
+  async getAssetOwner(assetId: string): Promise<string> {
+    const result = await this.ethereumClient.queryContract(
+      this.contractAddress,
+      AssetContract.abi,
+      "getOwner",
+      [assetId],
+    );
+    return result as string;
+  }
+}
+```
+
+#### Step 4: Integrate with Your Existing API
+
+```typescript
+// src/routes/assets.ts (e.g., Express.js)
+import express from "express";
+import { AssetService } from "../services/asset-service";
+
+const router = express.Router();
+const assetService = new AssetService();
+
+// Your existing API patterns - Cacti is just a library you use
+router.post("/assets", async (req, res) => {
+  try {
+    const { assetId, owner, privateKey, ethAccount } = req.body;
+    await assetService.createAsset(assetId, owner, privateKey, ethAccount);
+    res.status(201).json({ success: true, assetId });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({ error: message });
+  }
+});
+
+router.get("/assets/:assetId/owner", async (req, res) => {
+  try {
+    const owner = await assetService.getAssetOwner(req.params.assetId);
+    res.json({ assetId: req.params.assetId, owner });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({ error: message });
+  }
+});
+
+export default router;
+```
+
+### Available Connectors for Level 1
+
+| Connector | Package | Ledger |
+|-----------|---------|--------|
+| Ethereum | `@hyperledger/cactus-plugin-ledger-connector-ethereum` | Ethereum, Geth, etc. |
+| Besu | `@hyperledger/cactus-plugin-ledger-connector-besu` | Hyperledger Besu |
+| Fabric | `@hyperledger/cactus-plugin-ledger-connector-fabric` | Hyperledger Fabric |
+| Corda | `@hyperledger/cactus-plugin-ledger-connector-corda` | R3 Corda |
+| Polkadot | `@hyperledger/cactus-plugin-ledger-connector-polkadot` | Polkadot/Substrate |
+| Iroha | `@hyperledger/cactus-plugin-ledger-connector-iroha2` | Hyperledger Iroha 2 |
+| Stellar | `@hyperledger/cacti-plugin-ledger-connector-stellar` | Stellar |
+
+---
+
+## Level 2: API Server with Plugins (Medium Immersion)
+
+**Best for:** 
+
+- Non-Node.js applications (Python, Java, Go, etc.) that need blockchain access via REST/gRPC
+- Microservices architectures where you want containerized blockchain connectivity
+- Teams that want built-in authentication, authorization, and observability
+
+### What You Get
+
+- REST and gRPC APIs for all plugin operations
+- Built-in authentication (JWT, OAuth2, etc.)
+- Containerized deployment ready
+- OpenAPI/Swagger documentation
+- Prometheus metrics
+- Multiple ledger support in one server
+
+### What You Provide
+
+- Your application (any language/framework)
+- Configuration for the API server
+- Deployment infrastructure (Kubernetes, Docker, etc.)
+
+### Architecture
+
+![Level 2 - API Server with Plugins](../../assets/level2-api-server-flow.png)
+
+### Tutorial: Running Cacti API Server with Ethereum Connector
+
+#### Step 1: Run the API Server Container
+
+```bash
+docker run \
+  --rm \
+  --publish 4000:4000 \
+  --env AUTHORIZATION_PROTOCOL='NONE' \
+  --env AUTHORIZATION_CONFIG_JSON='{}' \
+  --env GRPC_TLS_ENABLED=false \
+  --env API_TLS_ENABLED=false \
+  --env API_HOST=0.0.0.0 \
+  --env API_PORT=4000 \
+  --env LOG_LEVEL=INFO \
+  ghcr.io/hyperledger/cactus-cmd-api-server:latest \
+    node index.js \
+      --plugins='[{"packageName":"@hyperledger/cactus-plugin-ledger-connector-ethereum","type":"org.hyperledger.cactus.plugin_import_type.LOCAL","action":"org.hyperledger.cactus.plugin_import_action.INSTALL","options":{"instanceId":"eth-connector","rpcApiHttpHost":"http://host.docker.internal:8545"}}]'
+```
+
+#### Step 2: Use the REST API from Any Language
+
+**Python Example:**
+
+```python
+# python-client/ethereum_client.py
+import requests
+from typing import Any
+
+class CactiEthereumClient:
+    """Client for interacting with Cacti API Server's Ethereum connector."""
+    
+    def __init__(self, base_url: str, jwt_token: str | None = None):
+        self.base_url = base_url
+        self.headers = {"Content-Type": "application/json"}
+        if jwt_token:
+            self.headers["Authorization"] = f"Bearer {jwt_token}"
+
+    def deploy_contract(
+        self,
+        bytecode: str,
+        abi: list,
+        private_key: str,
+        eth_account: str,
+    ) -> dict[str, Any]:
+        """Deploy a smart contract via Cacti API."""
+        response = requests.post(
+            f"{self.base_url}/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-ethereum/deploy-contract-solidity-bytecode",
+            headers=self.headers,
+            json={
+                "bytecode": bytecode,
+                "contractAbi": abi,
+                "web3SigningCredential": {
+                    "type": "PRIVATE_KEY_HEX",
+                    "ethAccount": eth_account,
+                    "secret": private_key,
+                },
+                "gas": 1000000,
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def invoke_contract(
+        self,
+        contract_address: str,
+        abi: list,
+        method: str,
+        params: list,
+        private_key: str,
+        eth_account: str,
+    ) -> dict[str, Any]:
+        """Invoke a smart contract method (state-changing)."""
+        response = requests.post(
+            f"{self.base_url}/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-ethereum/invoke-contract",
+            headers=self.headers,
+            json={
+                "contractAddress": contract_address,
+                "contractAbi": abi,
+                "invocationType": "SEND",
+                "methodName": method,
+                "params": params,
+                "web3SigningCredential": {
+                    "type": "PRIVATE_KEY_HEX",
+                    "ethAccount": eth_account,
+                    "secret": private_key,
+                },
+                "gas": 1000000,
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def query_contract(
+        self,
+        contract_address: str,
+        abi: list,
+        method: str,
+        params: list,
+    ) -> dict[str, Any]:
+        """Query a smart contract (read-only)."""
+        response = requests.post(
+            f"{self.base_url}/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-ethereum/invoke-contract",
+            headers=self.headers,
+            json={
+                "contractAddress": contract_address,
+                "contractAbi": abi,
+                "invocationType": "CALL",
+                "methodName": method,
+                "params": params,
+                "web3SigningCredential": {"type": "NONE"},
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+# Usage example
+if __name__ == "__main__":
+    client = CactiEthereumClient("http://localhost:4000")
+    
+    result = client.query_contract(
+        contract_address="0x...",
+        abi=[{"name": "balanceOf", "type": "function", "inputs": [...], "outputs": [...]}],
+        method="balanceOf",
+        params=["0xYourAddress"],
+    )
+    print(f"Balance: {result}")
+```
+
+**Go Example:**
+
+```go
+// go-client/main.go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+// CactiClient provides access to Cacti API Server
+type CactiClient struct {
+    BaseURL    string
+    HTTPClient *http.Client
+}
+
+// NewCactiClient creates a new Cacti client
+func NewCactiClient(baseURL string) *CactiClient {
+    return &CactiClient{
+        BaseURL:    baseURL,
+        HTTPClient: &http.Client{Timeout: 30 * time.Second},
+    }
+}
+
+// InvokeContractRequest represents the request body
+type InvokeContractRequest struct {
+    ContractAddress       string                 `json:"contractAddress"`
+    ContractAbi           []interface{}          `json:"contractAbi"`
+    InvocationType        string                 `json:"invocationType"`
+    MethodName            string                 `json:"methodName"`
+    Params                []interface{}          `json:"params"`
+    Web3SigningCredential map[string]interface{} `json:"web3SigningCredential"`
+    Gas                   int                    `json:"gas,omitempty"`
+}
+
+// QueryContract performs a read-only contract call
+func (c *CactiClient) QueryContract(
+    contractAddress string,
+    abi []interface{},
+    methodName string,
+    params []interface{},
+) (map[string]interface{}, error) {
+    request := InvokeContractRequest{
+        ContractAddress:       contractAddress,
+        ContractAbi:           abi,
+        InvocationType:        "CALL",
+        MethodName:            methodName,
+        Params:                params,
+        Web3SigningCredential: map[string]interface{}{"type": "NONE"},
+    }
+
+    body, err := json.Marshal(request)
+    if err != nil {
+        return nil, err
+    }
+
+    resp, err := c.HTTPClient.Post(
+        c.BaseURL+"/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-ethereum/invoke-contract",
+        "application/json",
+        bytes.NewBuffer(body),
+    )
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+        return nil, err
+    }
+    return result, nil
+}
+
+func main() {
+    client := NewCactiClient("http://localhost:4000")
+    result, err := client.QueryContract(
+        "0x...",
+        []interface{}{}, // ABI
+        "getBalance",
+        []interface{}{},
+    )
+    if err != nil {
+        fmt.Printf("Error: %v\n", err)
+        return
+    }
+    fmt.Printf("Result: %v\n", result)
+}
+```
+
+### API Documentation
+
+Once the server is running, access the OpenAPI documentation at:
+
+- Swagger UI: `http://localhost:4000/api/v1/api-docs`
+- OpenAPI JSON: `http://localhost:4000/api/v1/openapi.json`
+
+---
+
+## Level 3: Full Framework Integration (Highest Immersion)
+
+**Best for:**
+
+- New projects starting from scratch that want a complete blockchain-integrated stack
+- Applications that need sophisticated cross-chain workflows
+- Teams that want to leverage Cacti's full feature set including business logic plugins
+
+### What You Get
+
+- Everything from Level 2, plus:
+- Business Logic Plugin framework for custom application logic
+- Consortium management for multi-organization scenarios
+- Cross-chain protocols (SATP, Weaver) for interoperability
+- Frontend integration patterns
+- Complete example applications as templates
+
+### What You Provide
+
+- Your business logic as a Cacti plugin
+- Your frontend application
+- Domain-specific smart contracts
+
+### Architecture
+
+![Level 3 - Full Framework Integration](../../assets/level3-full-framework.png)
+
+### Tutorial: Building a Complete Application
+
+This tutorial walks through creating an application similar to the Supply Chain example, but with clear separation of what's Cacti and what's your code.
+
+#### Step 1: Project Structure
+
+```
+my-cacti-app/
+├── packages/
+│   ├── my-app-business-logic-plugin/     # YOUR CODE - Business logic
+│   │   ├── src/main/typescript/
+│   │   │   ├── plugin.ts                 # Cacti plugin wrapper
+│   │   │   ├── web-services/             # YOUR REST endpoints
+│   │   │   └── services/                 # YOUR business logic
+│   │   └── package.json
+│   ├── my-app-backend/                   # YOUR CODE - App orchestration
+│   │   └── src/main/typescript/
+│   │       └── app.ts                    # Wires everything together
+│   └── my-app-frontend/                  # YOUR CODE - Web UI
+├── contracts/                            # YOUR CODE - Smart contracts
+└── package.json
+```
+
+#### Step 2: Create Your Business Logic Plugin
+
+```typescript
+// packages/my-app-business-logic-plugin/src/main/typescript/plugin.ts
+import {
+  IPluginWebService,
+  IWebServiceEndpoint,
+  ICactusPlugin,
+  ICactusPluginOptions,
+} from "@hyperledger/cactus-core-api";
+import { PluginRegistry } from "@hyperledger/cactus-core";
+import type { Express } from "express";
+
+// Import YOUR services
+import { AssetService } from "./services/asset-service";
+import { CreateAssetEndpoint } from "./web-services/create-asset-endpoint";
+import { GetAssetEndpoint } from "./web-services/get-asset-endpoint";
+
+export interface IMyAppPluginOptions extends ICactusPluginOptions {
+  pluginRegistry: PluginRegistry;
+  logLevel?: string;
+}
+
+/**
+ * YOUR plugin that wraps your business logic.
+ * Implements Cacti's plugin interface so it can be loaded into the API server.
+ */
+export class MyAppPlugin implements ICactusPlugin, IPluginWebService {
+  private readonly instanceId: string;
+  private readonly pluginRegistry: PluginRegistry;
+  private readonly assetService: AssetService;
+  private endpoints: IWebServiceEndpoint[] | undefined;
+
+  constructor(options: IMyAppPluginOptions) {
+    this.instanceId = options.instanceId;
+    this.pluginRegistry = options.pluginRegistry;
+    
+    // YOUR business logic service
+    this.assetService = new AssetService(this.pluginRegistry);
+  }
+
+  public getInstanceId(): string {
+    return this.instanceId;
+  }
+
+  public getPackageName(): string {
+    return "@my-org/my-app-business-logic-plugin";
+  }
+
+  public async onPluginInit(): Promise<unknown> {
+    return;
+  }
+
+  public async shutdown(): Promise<void> {
+    return;
+  }
+
+  /**
+   * Register YOUR API endpoints with the Cacti API server
+   */
+  public async getOrCreateWebServices(): Promise<IWebServiceEndpoint[]> {
+    if (this.endpoints) {
+      return this.endpoints;
+    }
+
+    // YOUR endpoints - these are your application's REST API
+    this.endpoints = [
+      new CreateAssetEndpoint({ assetService: this.assetService }),
+      new GetAssetEndpoint({ assetService: this.assetService }),
+    ];
+
+    return this.endpoints;
+  }
+
+  public async registerWebServices(
+    app: Express,
+  ): Promise<IWebServiceEndpoint[]> {
+    const endpoints = await this.getOrCreateWebServices();
+    for (const endpoint of endpoints) {
+      endpoint.registerExpress(app);
+    }
+    return endpoints;
+  }
+}
+```
+
+#### Step 3: Create Your Business Logic Service
+
+```typescript
+// packages/my-app-business-logic-plugin/src/main/typescript/services/asset-service.ts
+import { PluginRegistry } from "@hyperledger/cactus-core";
+import {
+  PluginLedgerConnectorEthereum,
+  Web3SigningCredentialType,
+} from "@hyperledger/cactus-plugin-ledger-connector-ethereum";
+import AssetContract from "../../../../contracts/Asset.json";
+
+/**
+ * YOUR service - contains your application's business logic.
+ * Uses Cacti connectors under the hood for blockchain access.
+ */
+export class AssetService {
+  private readonly pluginRegistry: PluginRegistry;
+
+  constructor(pluginRegistry: PluginRegistry) {
+    this.pluginRegistry = pluginRegistry;
+  }
+
+  private getEthereumConnector(): PluginLedgerConnectorEthereum {
+    // Get the Cacti connector from the plugin registry
+    const plugins = this.pluginRegistry.getPlugins();
+    const connector = plugins.find(
+      (p) => p.getPackageName() === "@hyperledger/cactus-plugin-ledger-connector-ethereum"
+    );
+    if (!connector) {
+      throw new Error("Ethereum connector not found in registry");
+    }
+    return connector as PluginLedgerConnectorEthereum;
+  }
+
+  /**
+   * YOUR business logic - creates an asset on the blockchain
+   */
+  async createAsset(
+    assetId: string,
+    owner: string,
+    value: number,
+    ethAccount: string,
+    privateKey: string,
+  ): Promise<{ assetId: string; transactionHash: string }> {
+    const connector = this.getEthereumConnector();
+    
+    // YOUR business rules
+    if (value <= 0) {
+      throw new Error("Asset value must be positive");
+    }
+
+    // Use Cacti connector to interact with blockchain
+    const result = await connector.invokeContract({
+      contractAddress: process.env.ASSET_CONTRACT_ADDRESS!,
+      contractAbi: AssetContract.abi,
+      invocationType: "SEND",
+      methodName: "createAsset",
+      params: [assetId, owner, value],
+      web3SigningCredential: {
+        type: Web3SigningCredentialType.PrivateKeyHex,
+        ethAccount,
+        secret: privateKey,
+      },
+      gas: 1000000,
+    });
+
+    return {
+      assetId,
+      transactionHash: result.transactionReceipt?.transactionHash ?? "",
+    };
+  }
+
+  async getAsset(assetId: string): Promise<{ assetId: string; owner: string; value: number }> {
+    const connector = this.getEthereumConnector();
+    
+    const result = await connector.invokeContract({
+      contractAddress: process.env.ASSET_CONTRACT_ADDRESS!,
+      contractAbi: AssetContract.abi,
+      invocationType: "CALL",
+      methodName: "getAsset",
+      params: [assetId],
+      web3SigningCredential: {
+        type: Web3SigningCredentialType.None,
+      },
+    });
+
+    return {
+      assetId,
+      ...(result.callOutput as { owner: string; value: number }),
+    };
+  }
+}
+```
+
+#### Step 4: Wire Everything Together
+
+```typescript
+// packages/my-app-backend/src/main/typescript/app.ts
+import { v4 as uuidv4 } from "uuid";
+import {
+  ApiServer,
+  ConfigService,
+  AuthorizationProtocol,
+} from "@hyperledger/cactus-cmd-api-server";
+import { PluginRegistry } from "@hyperledger/cactus-core";
+import { PluginLedgerConnectorEthereum } from "@hyperledger/cactus-plugin-ledger-connector-ethereum";
+import { PluginKeychainMemory } from "@hyperledger/cactus-plugin-keychain-memory";
+
+// YOUR plugin
+import { MyAppPlugin } from "@my-org/my-app-business-logic-plugin";
+
+async function main(): Promise<void> {
+  // Create the plugin registry (Cacti component)
+  const pluginRegistry = new PluginRegistry();
+
+  // Add Cacti keychain plugin
+  const keychain = new PluginKeychainMemory({
+    instanceId: uuidv4(),
+    keychainId: "my-keychain",
+    logLevel: "INFO",
+  });
+  pluginRegistry.add(keychain);
+
+  // Add Cacti Ethereum connector
+  const ethereumConnector = new PluginLedgerConnectorEthereum({
+    instanceId: "ethereum-connector",
+    rpcApiHttpHost: process.env.ETHEREUM_RPC_URL!,
+    pluginRegistry,
+    logLevel: "INFO",
+  });
+  pluginRegistry.add(ethereumConnector);
+
+  // Add YOUR plugin
+  const myAppPlugin = new MyAppPlugin({
+    instanceId: uuidv4(),
+    pluginRegistry,
+    logLevel: "INFO",
+  });
+  pluginRegistry.add(myAppPlugin);
+
+  // Create and start the API server (Cacti component)
+  const configService = new ConfigService();
+  const config = await configService.newExampleConfig();
+  config.authorizationProtocol = AuthorizationProtocol.NONE;
+  config.configFile = "";
+  config.apiCorsDomainCsv = "*";
+  config.apiPort = 4000;
+  config.cockpitPort = 3100;
+  config.logLevel = "INFO";
+  config.apiTlsEnabled = false;
+
+  const apiServer = new ApiServer({
+    config,
+    pluginRegistry,
+  });
+
+  await apiServer.start();
+  console.log("My App is running!");
+  console.log("API: http://localhost:4000");
+  console.log("Your endpoints: http://localhost:4000/api/v1/my-app/assets");
+}
+
+main().catch(console.error);
+```
+
+### What's Cacti vs What's Yours (Level 3 Summary)
+
+| Category | Your Code | Cacti |
+|----------|-----------|-------|
+| **Frontend** | `my-app-frontend/` - Your web UI | - |
+| **Business Logic** | `my-app-business-logic-plugin/services/` | Plugin interface (`IPluginWebService`) |
+| **REST Endpoints** | `my-app-business-logic-plugin/web-services/` | Endpoint registration helpers |
+| **Smart Contracts** | `contracts/` - Your Solidity/chaincode | - |
+| **Blockchain Access** | - | Ledger Connectors |
+| **Credential Storage** | - | Keychain Plugins |
+| **API Hosting** | - | ApiServer |
+| **Plugin Discovery** | - | PluginRegistry |
+
+---
+
+## Deciding Which Level is Right for You
+
+| Question | Level 1 | Level 2 | Level 3 |
+|----------|---------|---------|---------|
+| Do you have an existing Node.js project? | ✅ Best fit | ✅ Works | ✅ Works |
+| Is your project in Python/Java/Go/etc.? | ❌ | ✅ Best fit | ✅ Works |
+| Do you need containerized deployment? | ❌ | ✅ Best fit | ✅ |
+| Do you need built-in auth/authz? | ❌ | ✅ | ✅ |
+| Are you building a new project from scratch? | ✅ Works | ✅ Works | ✅ Best fit |
+| Do you need cross-chain transactions (SATP)? | ❌ | ✅ | ✅ Best fit |
+| Do you need multi-organization consortium? | ❌ | ✅ | ✅ Best fit |
+| Want minimal Cacti footprint? | ✅ Best fit | ❌ | ❌ |
+
+---
+
+## Next Steps
+
+- **Level 1**: Check out the [connector documentation](../cactus/packages.md) for your target ledger
+- **Level 2**: See the [API Server configuration guide](../cactus/packages/cactus-cmd-api-server.md)
+- **Level 3**: Study the [Supply Chain Example](../cactus/examples/supply-chain-app.md) as a complete reference
+
+## Getting Help
+
+- [Discord](https://discord.com/channels/905194001349627914/908379338716631050) - Community support
+- [GitHub Issues](https://github.com/hyperledger-cacti/cacti/issues) - Bug reports and feature requests
+- [Documentation](https://hyperledger-cacti.github.io/cacti/) - Full documentation
+---\n\n<small>Generated with GitHub Copilot as directed by rafaelapb</small>
+
+
+========== FILE: BUILD.md ==========
+- [Hyperledger Cacti Build Instructions](#hyperledger-cacti-build-instructions)
+- [Fast Developer Flow / Code Iterations](#fast-developer-flow--code-iterations)
+- [Getting Started](#getting-started)
+  - [VSCode Dev Container](#vscode-dev-container)
+  - [MacOS](#macos)
+  - [Linux](#linux)
+  - [Windows](#windows)
+  - [Random Windows specific issues not covered here](#random-windows-specific-issues-not-covered-here)
+  - [Configure Cacti](#configure-cacti)
+- [Build Script Decision Tree](#build-script-decision-tree)
+- [Configuring SSH to use upterm](#configuring-ssh-to-use-upterm)
+
+## Hyperledger Cacti Build Instructions
+
+This is the place to start if you want to give Cactus a spin on your local
+machine or if you are planning on contributing.
+
+> This is not a guide for `using` Cactus for your projects that have business logic
+> but rather a guide for people who want to make changes to the code of Cactus.
+> If you are just planning on using Cactus as an npm dependency for your project,
+> then you might not need this guide at all.
+
+The project uses Typescript for both back-end and front-end components.
+
+## Fast Developer Flow / Code Iterations
+
+We put a lot of thought and effort into making sure that fast developer iterations can be
+achieved (please file a bug if you feel otherwise) while working **on** the framework.
+
+If you find yourself waiting too much for builds to finish, most of the time
+that can be helped by using the `npm run watch` script which can automatically
+recompile packages as you modify them (and only the packages that you have
+modified, not everything).
+
+It also supports re-running the OpenAPI generator when you update any
+`openapi.json` spec files that we use to describe our endpoints.
+
+The `npm run watch` script in action:
+
+![Fast Developer Flow / Code Iterations](./docs/hyperledger-cactus-watch-script-tutorial-2021-03-06.gif)
+
+## Getting Started
+
+### VSCode Dev Container
+* Install prerequisites
+  * [Git](https://github.com/git-guides/install-git#install-git-on-mac)
+  * [Visual Studio Code](https://code.visualstudio.com/)
+  * [Docker Desktop](https://www.docker.com/) (Please ensure Docker Desktop running when using VSCode Dev Container)
+  * [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) (Download this extension in VSCode)
+
+* Direct Dev Container settings **(Suitable for Beginners)**
+ 
+  * Clone the repository and open Cacti folder in VSCode
+  
+    ```
+    git clone https://github.com/hyperledger-cacti/cacti.git
+    ```
+  * Open the command palette (`F1` or `Ctrl+Shift+P`) and select **"Reopen in Container"**
+  * Wait for the container setup and start developing!
+    
+* Persistent Dev Environment settings with Docker Volume **(Suitable for Advanced Users)**
+  * Clone the repository and open Cacti folder in VSCode
+  
+    ```
+    git clone https://github.com/hyperledger-cacti/cacti.git
+    ```
+  * Create and run Docker Volume
+
+    ```
+    docker volume create cacti_volume
+    docker run -v cacti_volume:/workspace -w /workspace -it node:20.20.0 bash
+    ```
+  * Add Docker volume configuration to devcontainer.json
+    ```
+    "mounts": [
+      "source=cacti_volume,target=/workspace,type=volume"
+    ],
+    ```
+  * Open the command palette (`F1` or `Ctrl+Shift+P`) and select **"Reopen in Container"**
+  * Wait for the container setup and start developing!
+    
+### MacOS 
+
+_Unless explicitly stated otherwise, each bullet will apply to both Intel and ARM Macs. In bullets where there is a difference in the installation process it will be noted._
+* Git
+  * https://github.com/git-guides/install-git#install-git-on-mac
+* NodeJS v20.20.0, npm v10.8.2 (we recommend using the Node Version Manager (nvm) if available for your OS)
+  * [Download nvm using script](https://github.com/nvm-sh/nvm?tab=readme-ov-file#install--update-script)
+    * _See the Section "Macs with Apple Silicon Chips" under [macOS Troubleshooting](https://github.com/nvm-sh/nvm?tab=readme-ov-file#macos-troubleshooting) for ARM Mac specific instructions_
+  * [Download nvm using homebrew](https://sukiphan.medium.com/how-to-install-nvm-node-version-manager-on-macos-d9fe432cc7db)
+  * Using nvm install and use specific version of node: 
+    ```
+    nvm install 20.20.0
+    nvm use 20.20.0
+    ```
+* Yarn
+  * `npm run enable-corepack` (from within the project directory)
+* [Docker Engine is available on Mac OS through Docker Engine](https://docs.docker.com/desktop/install/mac-install/). 
+  * _See the difference in system requirements for Docker Desktop for Intel and ARM Macs under System Requirements on the page above._
+* Docker Compose
+  * Installing Docker Desktop on Mac will include Docker Compose 
+* OpenJDK (Corda support Java 8 JDK but do not currently support Java 9 or higher)
+  * [Follow instructions for Mac here](https://github.com/supertokens/supertokens-core/wiki/Installing-OpenJDK-for-Mac-and-Linux)
+* Go
+  * [Installing Go for Mac](https://go.dev/dl/)
+    * _Under featured downloads on the page above choose between the ARM64 or x86-64 option based on your machine._
+  * [Adding Environment Variable and Go extensions](https://code.visualstudio.com/docs/languages/go)
+* Foundry (required for SATP Hermes smart contract compilation)
+  * Install Foundry:
+    ```sh
+    curl -L https://foundry.paradigm.xyz | bash
+    ```
+  * Restart your terminal or run `source ~/.zshrc`, then:
+    ```sh
+    foundryup
+    ```
+  * Verify installation:
+    ```sh
+    forge --version
+    ```
+
+### Linux
+* Insert Linux instructions here
+
+### Windows 
+* Insert Linux instructions here 
+
+### Random Windows specific issues not covered here
+
+We recommend that you use WSL2 or any Linux VM (or bare metal).
+We test most frequently on Ubuntu 20.04 LTS
+
+### Configure Cacti 
+
+* Clone the repository
+
+```sh
+git clone https://github.com/hyperledger-cacti/cacti.git
+```
+
+
+Windows specific gotcha: `File paths too long` error when cloning. To fix:
+Open PowerShell with administrative rights and then run the following:
+
+```sh
+git config --system core.longpaths true
+```
+
+* Change directories to the project root
+
+```sh
+cd cacti
+```
+
+* Run this command to enable corepack (Corepack is included by default with all Node.js installs, but is currently opt-in.)
+
+```sh
+npm run enable-corepack
+```
+
+* Run the initial configuration script (can take a long time, 10+ minutes on a low-spec laptop)
+
+```sh
+yarn run configure
+```
+
+At this point you should have all packages built for development.
+
+You can start making your changes (use your own fork and a feature branch)
+or just run existing tests and debug them to see how things fit together.
+
+For example you can *run a ledger single status endpoint test* via the
+REST API with this command:
+
+```sh
+npx tap --ts --timeout=600 packages/cactus-test-plugin-htlc-eth-besu/src/test/typescript/integration/plugin-htlc-eth-besu/get-single-status-endpoint.test.ts
+```
+
+*You can also start the API server* and verify more complex scenarios with an
+arbitrary list of plugins loaded into Cactus. This is useful for when you intend
+to develop your plugin either as a Cactus maintained plugin or one on your own.
+
+```sh
+npm run generate-api-server-config
+```
+
+Notice how this task created a .config.json file in the project root with an
+example configuration that can be used a good starting point for you to make
+changes to it specific to your needs or wants.
+
+The most interesting part of the `.config.json` file is the plugins array which
+takes a list of plugin package names and their options (which can be anything
+that you can fit into a generic JSON object).
+
+Notice that to include a plugin, all you need is specify it's npm package name.
+This is important since it allows you to have your own plugins in their respective,
+independent Github repositories and npm packages where you do not have to seek
+explicit approval from the Cactus maintainers to create/maintain your plugin at all.
+
+Once you are satisfied with the `.config.json` file's contents you can just:
+
+```sh
+npm run start:api-server
+```
+
+After starting the API server, you will see in the logs that plugins were loaded
+and that the API is reachable on the port you specified (4000 by default). The Web UI (Cockpit)
+is disabled by default but can be enabled by changing the property value 'cockpitEnabled'
+to true and it is reachable through port on the port your config
+specified (3000 by default).
+
+> You may need to enable manually the CORS patterns in the configuration file.
+This may be slightly inconvenient, but something we are unable to compromise on
+despite valuing developer experience very much. We have decided that the
+software should be `secure by default` above all else and allow for
+customization/degradation of security as an opt-in feature rather than starting
+from that state.
+
+At this point, with the running API server, you can
+* Test the REST API directly with tools like cURL or Postman
+* Develop your own applications against it with the `Cactus API Client(s)`
+* Create and test your own plugins
+
+## Build Script Decision Tree
+
+The `npm run watch` script should cover 99% of the cases when it comes to working
+on Cactus code and having it recompile, but for that last 1% you'll need to
+get your hands dirty with the rest of the build scripts. Usually this is only
+needed when you are adding new dependencies (npm packages) as part of something
+that you are implementing.
+
+There are a lot of different build scripts in Cactus in order to provide contributors
+fine(r) grained control over what parts of the framework they wish build.
+
+> Q: Why the complexity of so many build scripts?
+>
+> A: We could just keep it simple with a single build script that builds everything
+always, but that would be a nightmare to wait for after having changed a single
+line of code for example.
+
+To figure out which script could work for rebuilding Cactus, please follow
+the following decision tree (and keep in mind that we have `npm run watch` too)
+
+![Build Script Decision Tree](./docs/images/build-script-decision-tree-2021-03-06.png)
+
+## Configuring SSH to use upterm
+Upload your public key onto github if not done so already. A public key is necessary to join the ssh connection to use upterm. For a comprehensive guide, see the [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
+
+Locate the `ci.yml` within `.github/workflows` and add to the `ci.yml` code listed below:
+  - name: Setup upterm session
+    uses: lhotari/action-upterm@v1
+    with:
+      repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+Keep in mind that the SSH upterm session should come after the checkout step (uses: actions/checkout@v4.1.1) to ensure that the CI doesn't hang without before the debugging step occurs. Editing the `ci.yml` will create a new upterm session within `.github/workflows` by adding a new build step. For more details, see the [Debug your GitHub Actions by using ssh](https://github.com/marketplace/actions/debugging-with-ssh).
+
+By creating a PR for the edited `ci.yml` file, this will the CI to run their tests. There are two ways to navigate to CIs.
+  1) Go to the PR and click the `checks` tab
+  2) Go to the `Actions` tab within the main Hyperledger Cactus Repository
+
+Click on the `CI Cactus workflow`. There should be a new job you've created be listed underneath the `build (ubuntu-22.04)` jobs. Click on the the new job (what's you've named your build) and locate the SSH Session within the `Setup Upterm Session` dropdown. Copy the SSH command that start with `ssh` and ends in `.dev` (ex. ssh **********:***********@uptermd.upterm.dev). Open your OS and paste the SSH command script in order to begin an upterm session.
+
+
+========== FILE: FAQ.md ==========
+# Frequently Asked Questions - Hyperledger Cacti <!-- omit in toc -->
+
+- [1. What are the minimum and recommended hardware specs? Do you have a cool story about this?](#1-what-are-the-minimum-and-recommended-hardware-specs-do-you-have-a-cool-story-about-this)
+- [2. Cacti API-Server returns `Unauthorized Error` using Postman on local machine](#2-cacti-api-server-returns-unauthorized-error-using-postman-on-local-machine)
+- [3. npm install fails with `code EMFILE` (syscall connect)](#3-npm-install-fails-with-code-emfile-syscall-connect)
+- [4. Where does the project name come from?](#4-where-does-the-project-name-come-from)
+- [5. Re-building the code after I change it slow. What to do?](#5-re-building-the-code-after-i-change-it-slow-what-to-do)
+- [6. The watch script fails with `Internal watch failed: watch ENOSPC`](#6-the-watch-script-fails-with-internal-watch-failed-watch-enospc)
+- [7. How can I not re-build the whole project every time I make a small change?](#7-how-can-i-not-re-build-the-whole-project-every-time-i-make-a-small-change)
+- [8. Why do you need all these packages/monorepo? It looks complicated!](#8-why-do-you-need-all-these-packagesmonorepo-it-looks-complicated)
+- [9. Prototyping something and the linter blocking my builds is slowing me down needlessly](#9-prototyping-something-and-the-linter-blocking-my-builds-is-slowing-me-down-needlessly)
+- [10. Why do all the tests bind the HTTP/S listeners to a random port?](#10-why-do-all-the-tests-bind-the-https-listeners-to-a-random-port)
+- [11. HTTP requests sent with Postman/curl/etc. hang if I'm debugging a test case with VSCode, why?](#11-http-requests-sent-with-postmancurletc-hang-if-im-debugging-a-test-case-with-vscode-why)
+- [12. How do I run test cases with my own ledger images?](#12-how-do-i-run-test-cases-with-my-own-ledger-images)
+- [13. How do I re-run a single job in the CI through the GitHub UI?](#13-how-do-i-re-run-a-single-job-in-the-ci-through-the-github-ui)
+- [14. How to fix the script configure, stuck at `RequestError: connect ETIMEOUT 2606:4700:6810:223:443` (or similar ports)?](#14-how-to-fix-the-script-configure-stuck-at-requesterror-connect-etimeout-260647006810223443-or-similar-ports)
+
+## 1. What are the minimum and recommended hardware specs? Do you have a cool story about this?
+
+> If and when people read this in the future, always inflate the numbers
+> a bit as we continue to add more and more tests every day (test automation is
+> very important to us)
+
+- **The bare minimum** for general development (building the code, running the tests,
+ etc) would be around **2 CPU cores (4 threads) and 6 GB RAM free/available**.
+
+- **A recommended** setup would be for a dev machine in my opinion is **16 GB RAM 4 CPU**
+**cores (8 threads)** and of course SSD for persistent storage.
+
+- **For Apple M1 (ARM-based system)** it is recommended to install `nvm` through a **Terminal using Rosetta** (and every tool that only supports Intel processors).
+The suggestion is to create a duplicate of your Terminal using Rosetta, open it and install `nvm`, and the other necessary development tools.
+Also, take a look into **VSCode Insiders** which might be handy in this situation.
+
+- Cool story/anecodte: Peter ran the tests on a VPS with 4 GB RAM in it once and the only
+tests that failed were the Corda ones because those are hungrier than the others.
+
+
+## 2. Cacti API-Server returns `Unauthorized Error` using Postman on local machine
+After installation of latest Cacti version a first API-Test with Postman is showing `Unauthorized Error`:
+   - Reason:  We have decided that the
+software should be `secure by default` above all else and allow for
+customization/degradation of security as an opt-in feature rather than starting from that state.
+  - How to enable manually the CORS patterns in config file: Open `config.json` and adapt the following settings:
+    - "authorizationProtocol": "NONE"
+    - "apiMtlsEnabled": false
+    - "apiTlsEnabled": false
+    - Restart the Cacti API-Server to use the changed settings
+
+## 3. npm install fails with `code EMFILE` (syscall connect)
+
+If you encounter this error it happens because the number of open files permitted
+by your operating system is lower than the number of files npm needs to have open
+in order to finish installing your dependencies.
+
+You can most likely solve this problem (assuming you are running on the recommended
+operating system distribution) by running the command below on the terminal which
+will increase said limit to 200k from the default () 4096.
+
+```sh
+echo fs.file-max=200000 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+```
+
+## 4. Where does the project name come from?
+
+It was the first one on our proposed list of names that satisfied the following criteria:
+
+1. It is a single, relatively short word
+2. It is (probably, hopefully) easy to say in most languages, not just English
+3. It received approval from the legal and marketing departments
+
+Also: In 2020, the Hyperledger Global Forum was held in Phoenix, Arizona where
+some of the maintainers (Peter, Shingo, Takuma) have met in-person for the first time.
+The area has a lot of cacti some of which were also featured in the official graphics
+of the conference itself.
+
+## 5. Re-building the code after I change it slow. What to do?
+
+Try using the `npm run watch` command which will trigger a re-build as soon as
+you save a .ts or openapi.json file. It only builds the specific packages that
+have changes in their source code so it tends to be 1-2 orders of magnitude faster
+than `npm run build:dev:backend` for example.
+
+Note: You need to make a change to trigger the re-build via the watch script,
+so if you started the script after having made a change then quickly make
+another change such as adding a new line or something like it in order to trigger
+the file save which will in turn trigger the re-build.
+
+## 6. The watch script fails with `Internal watch failed: watch ENOSPC`
+
+This happens because by default your operating system is configured to limit
+the number of files watchable to a number lower than the number of source files
+are there in the project that needs to be watched for changes.
+
+How the raising of this limit can be done will depend heavily on the operating
+system and its version that you use, but for Ubuntu 20.04 and likely its sibling
+versions the solution presented should work:
+
+```sh
+echo fs.inotify.max_user_watches=582222 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+```
+[Stackoverflow.com - Node.JS: Getting error : [nodemon] Internal watch failed: watch ENOSPC](https://stackoverflow.com/a/34664097/698470)
+
+
+## 7. How can I not re-build the whole project every time I make a small change?
+
+The answer is the same as for [Re-building the code after I change it slow. What to do?](#re-building-the-code-after-i-change-it-slow-what-to-do)
+
+## 8. Why do you need all these packages/monorepo? It looks complicated!
+
+It is a bit more complicated than having a single package indeed, but it provides
+us with the flexibility we need to
+a) implement the plugin architecture where people can opt in to use certain
+packages but not others
+b) follow the unix philosophy of having smaller components/tools that do one thing and do that very well (hopefully)
+c) there are more reasons we could mention but they are all mostly just reiterations of the above 2
+
+## 9. Prototyping something and the linter blocking my builds is slowing me down needlessly
+
+You have a number of options at your disposal, all achieving roughly the same outcome:
+1. You can turn off the linter temporarily in the code file that you are working on with a comment such as this: `/* eslint-disable */`
+Do note however, that prior to your pull requests being accepted, this will have to be removed and the linter errors fixed.
+2. If you genuinely believe that the code files or whole directories of them that you are working on should not be
+subject to the linter at all, you can also ignore them by adding a glob pattern to the `.eslintignore` file in the
+project root. This is usually not recommended, but in certain cases will be justifiable, for example if you are working
+with a code generator that outputs source code that you are not supposed to change because it is regenerated upon every
+subsequent compilation.
+3. Another temporary option is to completely exclude the linting from the build
+by altering the `lint` npm script in the root `package.json` file to be a no-op
+by replacing its contents
+
+`"lint": "eslint '*/*/src/**/*.{js,ts}' --quiet --fix",`
+
+with something like this for example:
+
+`"lint": "echo OK",`
+
+## 10. Why do all the tests bind the HTTP/S listeners to a random port?
+
+This makes it much more cumbersome to do debugging while a test case is running.
+The reason why we need it is because if we always used the same ports, we could
+only run the tests one at a time so that they don't butt heads when allocating
+their ports. This is not really feasible as the full test suite is already
+taking above an hour at the time of this writing to execute and that would
+likely triple if we started running tests sequentially.
+
+The best workaround to this for now is to just set the port manually to a fixed
+number when you are debugging a specific test case and then set it back to zero
+prior to sending your pull request.
+## 11. HTTP requests sent with Postman/curl/etc. hang if I'm debugging a test case with VSCode, why?
+
+When you use the execution stops on a breakpoint, that suspends all activities
+from happening not just the test case's code itself. Meaning that your HTTP
+request will not be processed by the API server / plugin until you let the execution
+proceed via the UI/shortcuts of the debugger.
+
+Once you let the execution continue, requests that previously appeared to be
+hanging should finish successfully.
+
+## 12. How do I run test cases with my own ledger images?
+
+Build and tag the image locally using a name that is non-ambiguous with the official tags. Modify the test code to skip the pull using the start method's omitPull parameter - e.g. replace
+
+`await this.fabric.start();`
+
+with
+
+`await this.fabric.start(true);`
+
+Then, modify the test to use the locally built image with the tag you specified. 
+Exact variable names may differ between test ledger classes, be sure to check the constructors for the right convention. Examples:
+
+Fabric
+```
+this.fabric = new FabricTestLedgerV1({
+  imageName: "*your image name*",
+  imageVersion: "*your image tag*",
+  ...
+});
+```
+
+Besu
+```
+this.besu = new BesuTestLedger({
+  containerImageName: "*your image name*",
+  containerImageVersion: "*your image tag*",
+  ...
+});
+```
+
+## 13. How do I re-run a single job in the CI through the GitHub UI?
+
+For example let's assume that you'd like to-run the yarn_lint` job from
+the ci.yaml workflow file. This usually becomes a goal when said job is
+flaky (sometimes fails for no valid reason) and you want to re-execute
+only that job instead of the entire CI test suite (which is very time
+and resource consuming compared to just a single job).
+
+1. First you have to locate the job you wish to re-execute and then click "Details" next to it:
+![pull-requests-main-page-ci-job-list-1.png](./docs/assets/ci-single-job-re-run-tutorial/pull-requests-main-page-ci-job-list-1.png)
+2. Then once on the details page, locate once again the job on the left 
+hand side list and observe the refresh icon next to it. Note that this
+icon only becomes visible after the full workflow (e.g. all the jobs in it)
+have concluded execution one way or another (fail or succeed, does not matter just that they are finished)
+![pull-request-ci-workflow-details-page-1.png](./docs/assets/ci-single-job-re-run-tutorial/pull-request-ci-workflow-details-page-1.png)
+1. Also note that the refresh icon shown on the  screenshot above will only
+become visible if you hover over the button with your cursor.
+
+You can also use the refresh icon button on the top right of the screen to achieve
+the same result:
+![pull-request-ci-workflow-details-page-2.png](./docs/assets/ci-single-job-re-run-tutorial/pull-request-ci-workflow-details-page-2.png)
+
+
+## 14. How to fix the script configure, stuck at `RequestError: connect ETIMEOUT 2606:4700:6810:223:443` (or similar ports)?
+
+If you are having errors while running the configure script, similar to this:
+
+```
+YN0001: | RequestError: connect ETIMEOUT 2606:4700:6810:223:443
+at ClientRequest.<anonymous> (/home/ubuntu/cacti/.yarn/releases/yarn-4.1.0.cjs:195:14340)
+at Object.onceWrapper (node:events:632:26)
+at ClientRequest.emit (node:events:529:35)
+at o.emit (/home/ubuntu/cacti/.yarn/releases/yarn-4.1.0.cjs:190:90286)
+at TLSSocket.socketErrorListener (node:events:501:9)
+at TLSSocket.emit (node:events:517:28)
+at emitErrorNT (node:internal/streams/destroy:151:8)
+at emitErrorCloseNT (node:internal/streams/destroy:116:3)
+.
+.
+```
+
+  *Warning*: The below mentioned changes affect how ipv6 is handled in the entire system and can affect other applications.
+
+Sometimes the IPv6 defaults can lead to npm registry being undiscoverable. To fix this issue (tested on Ubuntu 22.04.4), one can safely disable IPv6 defaults. One such way (via a different configuration file) to achieve this is:
+1. Create a file `/etc/sysctl.d/60-ipv6-disable.conf`
+2. Add the following contents to the file 
+   
+  ```
+    net.ipv6.conf.all.disable_ipv6 = 1
+    net.ipv6.conf.default.disable_ipv6 = 1
+    net.ipv6.conf.lo.disable_ipv6 = 1
+  ```
+1. Start the service: `service procps start`
+
+========== FILE: GOVERNANCE.md ==========
+# Governance
+
+Hyperledger Cactus is managed under an open governance model as described in the Hyperledger charter. Cactus is led by a set of maintainers, who can be found in the MAINTAINERS.md file.
+
+**Maintainers**
+
+Cactus is led by the project’s maintainers. The maintainers are responsible for reviewing and merging all patches submitted for review, and they guide the overall technical direction of the project within the guidelines established by the Hyperledger Technical Steering Committee (TSC).
+
+**Becoming a Maintainer**
+
+The project’s maintainers will, from time-to-time, consider adding or removing a maintainer. An existing maintainer can submit a change set to the MAINTAINERS.md file. A nominated contributor may become a maintainer by a three-quarters approval of the proposal by the existing maintainers. Once approved, the change set is then merged and the individual is added to (or alternatively, removed from) the maintainers group.
+
+Maintainers may be removed by explicit resignation, for prolonged inactivity (3 or more months), or for some infraction of the code of conduct or by consistently demonstrating poor judgement. A maintainer removed for inactivity should be restored following a sustained resumption of contributions and reviews (a month or more) demonstrating a renewed commitment to the project.  We require that maintainers that will be temporarily inactive do so “gracefully” and update other maintainers on their status and time availability rather than appearing to “fall off the face of the earth.”
+
+**Releases**
+
+A majority of the maintainers may decide to create a release of Cactus.  Any broader rules of Hyperledger pertaining to releases must be followed.  Once the project is mature, there will be a stable LTS (long term support) release branch, as well as the main branch for upcoming new features.
+
+**Making Feature/Enhancement Proposals**
+
+Code changes that are either bug fixes, direct and small improvements, or things that are on the roadmap (see below) can be issued as PRs in a relatively quick time period, although we recommend creating a Github ticket to track even bugs and small improvements.  For more substantial changes, however, a feature/enhancement proposal is required.  These proceed through the approval process like typical PRs, and require the same “2 + 1” approval policy for acceptance.
+
+In particular, all contributors to the project should have enough time to voice an opinion on feature/enhancement proposals before they are accepted.  So the maintainers will determine some “comment period” between proposal submission and acceptance so that contributors have enough time to voice their opinions.
+
+Significant changes can be marked as such via the predefined label with the same name. This is a tool that helps maintainers identify the most important issues/discussions to be had at any given time through the GitHub web interface.
+
+To easily access the list of significant changes, navigate to the label:
+https://github.com/hyperledger/cactus/labels/Significant_Change
+
+We also recommend reading our CONTRIBUTING.md file (https://github.com/hyperledger/cactus/blob/main/CONTRIBUTING.md) for more information about contributing.
+
+**Approving Pull Requests**
+
+Maintainers designated for review are required to review PRs in a timely manner (all circumstances considered, of course).  Any pull request must be reviewed by at least two maintainers, and if a PR is submitted by a maintainer, these two reviewers must be different from the original submitter.
+
+The technical requirements for submitting/approving/merging pull requests are further detailed in the CONTRIBUTING.md file where it is laid out in detail how to ensure git commit graph tidiness.
+
+**Reviewing Pull Requests**
+
+We are strongly committed to processing pull requests from everyone in a fair manner meaning that pull requests are to be
+reviewed in order of submission.
+Reviewing PRs in order of submission does not guarantee nor necessitate accepting/merging said PRs in order of submission
+since some PRs may require lengthy feedback loops while others may pass the muster without any change requests or
+feedback at all, depending on the nature of the change being proposed.
+Security related pull requests may be fast tracked even against the "in order of submission" principle if it appears
+that a vulnerability makes a pull request a time sensitive issue where the sooner we propagate a fix the better it is.
+
+**Maintainers Meeting**
+
+The maintainers hold regular maintainers meetings, which are open to everyone. The purpose of the maintainers meeting is to plan for and review the progress of releases, and to discuss the technical and operational direction of the project.
+
+Please see the wiki for maintainer meeting details.
+
+One point to mention about meetings is that new feature/enhancement proposals as described above should be presented to a maintainers meeting for consideration, feedback, and acceptance.
+
+**Roadmap**
+
+The Cactus maintainers are required to maintain a roadmap.  There is a technical roadmap, with all of the issues as they directly relate to code, and a more public-friendly roadmap that anyone can digest.  The required features to be implemented will be maintained as issues at the official github repository of Cactus with tag string ‘for current release’ or ‘for future release’. The task which is not volunteered to work, will be dispatched to specific contributors following consensus among the majority of maintainers.
+
+The technical roadmap is implicitly derived from the Github “milestones” feature. To access the list of milestones for Cactus use this link:
+https://github.com/hyperledger/cactus/milestones
+
+**Communications**
+
+We use the Cactus email list for long-form communications and Discord for short, informal announcements and other communications.  We encourage all communication, whenever possible, to be public and in the clear (i.e. rather than sending an email directly to a person or two, send it out to the whole list if it pertains to the project).
+
+**Future Changes**
+
+The governance of Cactus may change as the project evolves.  In particular, if the project becomes large, we will incorporate tiered maintainership, with top-level maintainers, subprojects, subproject maintainers, release managers, and so forth.  We emphasize that this document is intended to be “living” and will be updated periodically.
+
+We require that changes to this document require a three-quarters approval of the existing maintainers.  Note that this may also be changed in the future if deemed necessary.
+
+**Attribution**
+
+This document is based on the Hyperledger Fabric governance document, with some substantial changes.
+
+========== FILE: MAINTAINERS.md ==========
+Maintainers
+===========
+
+**Active Maintainers**
+
+| Name | GitHub | Chat |
+|------|--------|------|
+| Michal Bajer | [outSH][outSH] | bajerm |
+| Venkatraman Ramakrishna | [VRamakrishna][VRamakrishna] | vramaiitkgp |
+| Sandeep Nishad | [sandeepnRES][sandeepnRES] | sandeepn |
+| Rafael Belchior | [RafaelAPB][RafaelAPB] | rafaelapb |
+| André Augusto | [AndreAugusto11][AndreAugusto11] | andreaugusto |
+| Carlos Amaro | [LordKubaya][LordKubaya] | kubaya |
+
+[outSH]: https://github.com/outSH
+[VRamakrishna]: https://github.com/VRamakrishna
+[sandeepnRES]: https://github.com/sandeepnRES
+[RafaelAPB]: https://github.com/RafaelAPB
+[AndreAugusto11]: https://github.com/AndreAugusto11
+[LordKubaya]: https://github.com/LordKubaya
+
+**Emeritus Maintainers**
+
+| Name | GitHub | Chat |
+|------|--------|------|
+| Jonathan Hamilton | [jonathan-m-hamilton][jonathan-m-hamilton] | JHamilton |
+| Krishnasuri Narayanam | [knarayan][knarayan] | Krishnasuri |
+| Dhinakaran Vinayagamurthy | [dhinakaran2705][dhinakaran2705] | Dhinakaran |
+| Jagpreet Singh Sasan | [jagpreetsinghsasan][jagpreetsinghsasan] | jagpreetsinghsasan |
+| Peter Somogyvari | [petermetz][petermetz] | peter_somogyvari |
+| Takuma TAKEUCHI | [takeutak][takeutak] | takeutak |
+| Izuru Sato | [izuru0][izuru0] | izurusato |
+
+
+[jonathan-m-hamilton]: https://github.com/jonathan-m-hamilton
+[knarayan]: https://github.com/knarayan
+[dhinakaran2705]: https://github.com/dhinakaran2705
+[jagpreetsinghsasan]: https://github.com/jagpreetsinghsasan
+[petermetz]: https://github.com/petermetz
+[takeutak]: https://github.com/takeutak
+[izuru0]: https://github.com/izuru0
+
+Below is a list of former contributors to the [Weaver Lab](https://github.com/hyperledger-labs/weaver-dlt-interoperability) project, which is now a part of Cacti.
+
+| Name | GitHub | Chat |
+|------|--------|------|
+| Ermyas Abebe | [ermyas][ermyas] | - |
+| Nick Waywood | [nwaywood][nwaywood] | - |
+| Dileban Karunamoorthy | [dileban][dileban] | - |
+| Allison Irvin | [airvin][airvin] | - |
+| Antony Targett | [AntTargett][AntTargett] | - |
+| Yining Hu | [Yining-Hu][Yining-Hu] | - |
+| Vinayaka Pandit | [Vinayaka-Pandit][Vinayaka-Pandit] | - |
+| Christian Vecchiola | [Christian-Vecchiola][Christian-Vecchiola] | - |
+
+[ermyas]: https://github.com/ermyas
+[nwaywood]: https://github.com/nwaywood
+[dileban]: https://github.com/dileban
+[airvin]: https://github.com/airvin
+[AntTargett]: https://github.com/AntTargett
+[Yining-Hu]: https://github.com//Yining-Hu
+[Vinayaka-Pandit]: https://github.com/Vinayaka-Pandit
+[Christian-Vecchiola]: https://github.com/hyp0th3rmi4
+
+
+========== FILE: RELEASE_MANAGEMENT.md ==========
+# Hyperledger Cacti - Release Management
+
+This document describes the steps to be taken by maintainers who are
+issuing releases. 
+
+> We aim to have as much of the process automated as
+> possible, but there will always be certain (slightly mundane) tasks to that
+> must be performed by a human with the right credentials (e.g. a maintainer)
+> and this document has to be kept up to date in the event of any of these
+>  steps changing.
+
+## General Best Practices
+
+1. Releases to be issued from the `main` branch only.
+2. Semantic versioning is highly preferred: https://semver.org/
+3. Git tags are to be applied for commits that were chosen for release.
+4. Tag names must follow the pattern of `vX.Y.Z` for example `v2.0.0`
+
+## Checklist / Steps To Take For Issuing a Release
+
+The below document uses `v1.1.3` as the example, when issuing a release you need to change this to whatever is the upcoming release that you are about to issue.
+Hence the first step is to update (find and replace all) the document (no need to send a PR with those changes) so that the helper scripts are changed as well.
+
+### Do a find and replace all for the version: 1.1.3
+
+#### Single script
+
+* Make sure your clone has latest changes from `main` branch. (Make sure to not have any local changes.)
+```sh
+git pull origin main
+```
+
+* Run the release script with the version:
+```sh
+./tools/release.sh 1.1.3
+```
+This will update the versions, and create a release commit
+
+* Push the commit to github.
+```
+git push origin release-1.1.3
+```
+
+#### Manually
+
+```sh
+git fetch --all
+git switch main
+git rebase upstream/main
+git push --force-with-lease
+git checkout -b release-v1.1.3
+yarn run configure
+yarn lerna version 1.1.3 --ignore-scripts --conventional-commits --exact --git-remote upstream --message="chore(release): publish %s" --no-push --no-git-tag-version --no-ignore-changes
+yarn tools:bump-openapi-spec-dep-versions --target-version=1.1.3
+yarn codegen
+yarn build:dev
+./tools/weaver-update-version.sh 1.1.3 .
+./tools/go-gen-checksum.sh 1.1.3 .
+```
+
+- Do note the `.` as the last parameter in last two commands.
+
+- The `./tools/weaver-update-version.sh` automation script seems slightly buggy at the moment so you'll have to manually update `./weaver/core/relay/Cargo.toml` yourself. See this comment for an example: https://github.com/hyperledger-cacti/cacti/pull/3427#discussion_r1686850372
+
+### Points to Note:
+- Double check that all of the package dependencies were updated from the previous
+version to the new one because lerna usually fails to do that for `devDependency` parts
+of the package.json files so you have to do this manually with search and replace through
+the entire repository...
+
+* The trick is to search for the previous release version within package.json 
+files or just search for "@hyperledger/cact*-*" or "@hyperledger-cacti/cact*-*" within the package.json files. 
+
+With VSCode you can do a project wide search & replace where:
+  1. Make sure that regex based replacing is enabled on the VSCode search UI (top right corner of the search panel)
+  2. You set the files to include to "package.json" (so that only files named package.json are included in the search)
+  3. You set the search term to this to find the OLD versions (without the backticks if you are reading this in plain text) `@hyperledger/cactus-(.*): "1.1.2"`
+  4. You set the replacement term to this (so that it swaps the version numbers with the new one) `@hyperledger/cactus-$1: "1.1.3"`
+
+- Also double check that the `"version": "?.?.?"` property has been updated in the package.json files all over the packages.
+
+- Finally a generic full-text search project-wide for the previous version string `?.?.?` where you exclude these from the results: `rust/fixtures/ink,go/generated/,kotlin/generated/,typescript/generated,openapi.json,.github/workflows/actionlint.yaml,.github/workflows/.dast-nuclei-cmd-api-server.yaml,CHANGELOG.md,go.sum,go.mod,yarn.lock,package-lock.json,.yarn/,weaver/core/relay/Cargo.toml` and then replace the findings with the new version such as `1.1.3`
+
+- update the lock file if necessary
+    ```sh
+    $ yarn
+    ```
+
+- Double check that the configure script still works (CI will fail without it anyway)
+    ```sh
+    $ yarn configure
+    ```
+
+- Double check that the changelog does not contain your fork's links instead of the upstream repo. You'll need to change this manually otherwise. For example, replace: 
+    - `https://github.com/petermetz/cact` 
+    with 
+    - `https://github.com/hyperledger/cact`
+
+```sh
+git add . && git commit --signoff --gpg-sign --message="chore(release): publish v1.1.3"
+git push --set-upstream upstream release-v1.1.3
+```
+
+### Then create a PR here - once that's merged, rebase onto upstream/main and:
+
+**IMPORTANT**: Do not enable auto-merging on GitHub for the pull request doing the release.
+The problem with auto-merging here is that it would modify the release commit's SHA as the
+rebase would happen on GitHub's servers where your git signing identity is not available to use
+given that GitHub does (should) not have access to your private key for signing.
+The way the preserve your commit signature as valid the commit SHA must remain the same and the
+way to achieve this is to perform the pull request merging with fast forward. The merging
+ensures that there is no commit SHA change and the `--ff-only` option ensures that there is no
+merge commit to throw a wrench in the process.
+
+1. Do a merge freeze
+2. Unfreeze the specific pull request that you just opened for the release issuance
+3. Wait for the PR to be approved as per standard governance rules
+4. Execute these commands (assuming your fork's git remote is `origin` and the official Hyperledger repo's is `upstream`)
+```sh
+    git fetch --all
+    git switch main
+    git rebase upstream/main
+    git merge --ff-only upstream/release-v1.1.3
+    git push upstream
+    git push origin
+    git tag -s -a "v1.1.3" -m "v1.1.3"
+    git push upstream --follow-tags
+```
+1. Lift the pull request merge freeze
+2. Create release on GitHub
+
+### Go and create a release on GitHub manually from the CHANGELOG.md file in the project root.
+
+### Close out the current milestone after moving all issues to the next one that were still unresolved in it
+
+```sh
+yarn run configure && yarn run build && yarn lerna publish from-git --loglevel=debug --summary-file
+```
+
+### To Ignore Failing Lifecycle Scripts
+
+```sh
+yarn lerna publish from-git --loglevel=debug --force-publish --ignore-scripts --ignore-prepublish --summary-file
+```

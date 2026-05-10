@@ -1,6 +1,6 @@
 \section*{How I Found Out About the Mentorship Program}
 
-I discovered the OpenSSF LFX Mentorship Program directly through the LFDT website, where I actively search for structured open-source opportunities. The program's focus on impactful projects within supply chain security, like the Hyperledger Fabric-X and Fablo integration, immediately captured my attention. I find these programs crucial for gaining hands-on experience in real-world infrastructure rather than isolated academic exercises.
+I discovered the Hyperledger Mentorship Program directly through the LF Decentralized Trust website and the Hyperledger project dashboard.
 
 % Divider line after question 1
 \begin{center}
@@ -9,7 +9,9 @@ I discovered the OpenSSF LFX Mentorship Program directly through the LFDT websit
 
 \section*{Why I Am Interested in This Program}
 
-My interest stems from a long-standing engagement with open-source and decentralized technologies, seeking to apply my skills to impactful hands-on development. The Fablo project's role in lowering the barrier to entry for Hyperledger Fabric-X deeply resonates with me, highlighting its community importance. This ambitious integration offers a significant learning curve, promising substantial growth in my understanding of complex systems and the satisfaction of contributing to a tool that benefits many.
+My interest stems from a fascination with interoperability and the complex challenges of merging mature blockchain frameworks. Hyperledger Cacti represents the pinnacle of this challenge—integrating the legacy of Hyperledger Cactus and Weaver into a unified, high-performance interoperability engine. 
+
+I am particularly motivated by the opportunity to improve the "developer experience" at a foundational level. Reducing CI/CD runtimes from 45 minutes to under 15 minutes is not just a technical optimization; it's a force multiplier for every contributor to the project. Similarly, restructuring fragmented documentation into a clear, tiered architecture (Level 1: Library, Level 2: API/REST, Level 3: Full Framework) directly lowers the entry barrier for the next generation of Cacti developers. Being part of the "Cleanup Initiative" allows me to contribute to the long-term sustainability and maintainability of a critical piece of decentralized infrastructure.
 
 % Divider line after question 2
 \begin{center}
@@ -18,7 +20,40 @@ My interest stems from a long-standing engagement with open-source and decentral
 
 \section*{Experience and Knowledge/Skills Applicable to This Program}
 
-My two years of open-source contributions, marked by over 800 GitHub contributions, have provided extensive experience in distributed systems, Docker-based tooling, TypeScript/Node.js, and CI/CD workflows, all directly relevant to this project. I have leveraged Docker and GitHub Actions for containerized applications and multi-service orchestration, crucial for managing Fabric-X networks via Docker Compose and Fablo. Specifically, my prior study of Fablo’s architecture and the Fabric-X token sample, including its xdev topology, core.yaml, routing tables, and fxconfig lifecycle, culminated in a functional MVP implementing `global.platform: "fabricx"` generator branching and network lifecycle commands. This focused work positions me exceptionally well to drive the Fabric-X integration into Fablo.
+My background in distributed systems, TypeScript/Node.js development, and DevOps aligns perfectly with the needs of the Cacti Cleanup project. Over the past few years, I have developed a strong proficiency in Docker-based orchestration and CI/CD optimization.
+
+For this specific mentorship, I have already conducted significant preliminary research (available in the \texttt{researches/} directory of this workspace):
+\begin{itemize}[leftmargin=*]
+    \item \textbf{CI/CD Audit:} Identified critical bottlenecks in the current Cacti pipeline, such as redundant Docker builds and lack of \texttt{node\_modules} caching. I've proposed a parallelized execution strategy that can reduce build times by over 60\%.
+    \item \textbf{Documentation Analysis:} Mapped the fragmentation between the "Node Server" (Cactus) and "Relay" (Weaver) architectures. I developed a proposal for a Tier-based documentation structure to unify these legacies.
+    \item \textbf{Codebase Understanding:} Navigated the monorepo structure and identified areas where dependency management and build-cache mechanisms (\texttt{.tsbuildinfo}) can be improved to speed up local and remote development.
+\end{itemize}
+
+My hands-on experience with TypeScript, combined with a deep dive into Cacti's architecture, ensures I can contribute effectively to both documentation restructuring and technical infrastructure improvements.
+
+\begin{pocbox}{Project Research and Audit Reports}
+    \textbf{You can find my detailed audits and research findings for this project at:} \\
+    \texttt{researches/CI\_CD/cacti\_cicd\_final\_audit.md} \\
+    \texttt{researches/Documentations/cacti\_weaver\_cacti.md}
+    \vspace{0.2cm}
+    These documents provide the empirical data and strategic planning behind the proposed optimizations.
+\end{pocbox}
+\vspace{0.5cm}
+
+\begin{table}[!htbp]
+\centering
+\large
+\begin{tabularx}{\textwidth}{c p{3.2cm} X}
+\toprule
+\textbf{\color{primary} Category} & \textbf{\color{primary} Skillset} \\
+\midrule
+Programming & Proficient in \texttt{TypeScript}, \texttt{JavaScript (ES6+)}, \texttt{Node.js}, \texttt{Go}, and \texttt{Python}. \\
+Infrastructure & Advanced \texttt{Docker}, \texttt{Docker Compose}, \texttt{GitHub Actions}, and \texttt{CI/CD} pipeline optimization. \\
+Web3 & Deep understanding of \texttt{Hyperledger Fabric}, \texttt{Cactus}, and \texttt{interoperability protocols}. \\
+Core Competencies & \textit{Technical Auditing}, \textit{Documentation Architecture}, \textit{Monorepo Management}, and \textit{Performance Benchmarking}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 % Divider line after question 3
 \begin{center}
@@ -27,7 +62,9 @@ My two years of open-source contributions, marked by over 800 GitHub contributio
 
 \section*{What I Hope to Get Out of This Mentorship Experience}
 
-Through this mentorship, I aim to significantly enhance my proficiency with complex codebase architectures and deepen my understanding of both Fablo and Fabric-X. I particularly look forward to gaining advanced confidence in Docker-based environments and microservice-oriented systems. Learning directly from the mentors' real-world experience and guidance is paramount for my development as an effective open-source contributor, enabling me to make lasting, meaningful contributions to the community and the project's future evolution.
+I hope to deepen my understanding of large-scale open-source project management and architectural consolidation. Working under the guidance of mentors like André Augusto, Carlos Amaro, Rafael Belchior, and Venkatraman Ramakrishna will provide me with invaluable insights into how to maintain complex, multi-ledger systems.
+
+Specifically, I aim to master the nuances of CI/CD orchestration for monorepos and learn the best practices for documenting multi-layered frameworks. Beyond the technical skills, I want to become an active, long-term contributor to the Hyperledger community and help shape the future of blockchain interoperability.
 
 % Divider line after question 4
 \begin{center}

@@ -1,0 +1,2676 @@
+========== FILE: examples/README.md ==========
+[FILE NOT FOUND]
+
+
+========== FILE: examples/cactus-example-supply-chain-backend/README.md ==========
+# Hyperledger Cactus Example - Supply Chain App
+
+
+## Usage
+
+1. Execute the following from:
+    ```sh
+    docker run \
+      --rm \
+      --privileged \
+      -p 3000:3000 \
+      -p 3100:3100 \
+      -p 3200:3200 \
+      -p 4000:4000 \
+      -p 4100:4100 \
+      -p 4200:4200 \
+      ghcr.io/hyperledger/cactus-example-supply-chain-app:2024-03-08--pr-3059-1
+    ```
+2. Observe the example application pulling up in the logs
+   1. the test ledger containers,
+   2. a test consortium with multiple members and their Cactus nodes
+3. Wait for the output to show the message `INFO (api-server): Cactus Cockpit reachable http://127.0.0.1:3200`
+4. Visit http://127.0.0.1:3200 in your web browser with Javascript enabled
+
+## Building and running the container locally
+
+```sh
+# Change directories to the project root
+
+# Build the docker image and tag it as "scaeb" for supply chain app example backend
+DOCKER_BUILDKIT=1 docker build --file \
+  ./examples/cactus-example-supply-chain-backend/Dockerfile \
+  . \
+  --tag scaeb \
+  --tag ghcr.io/hyperledger/cactus-example-supply-chain-app:$(git describe --contains --all HEAD | sed -r 's,/,-,g')_$(git rev-parse --short HEAD)_$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+
+# Run the built image with ports mapped to the host machine as you see fit
+# The --privileged flag is required because we use Docker-in-Docker for pulling
+# up ledger containers from within the container in order to have the example
+# be completely self-contained where you don't need to worry about running
+# multiple different ledgers jus this one container.
+docker run --rm -it --privileged -p 3000:3000 -p 3100:3100 -p 3200:3200 -p 4000:4000 -p 4100:4100 -p 4200:4200 scaeb
+```
+
+Building the image with a specific npm package version:
+
+```sh
+DOCKER_BUILDKIT=1 docker build \
+  --build-arg NPM_PKG_VERSION=jwt-supply-chain \
+  --file ./examples/cactus-example-supply-chain-backend/Dockerfile \
+  --tag scaeb \
+  ./
+```
+
+## Running the Example Application Locally
+
+> Make sure you have all the dependencies set up as explained in `BUILD.md`
+
+On the terminal, issue the following commands:
+
+1. `npm run enable-corepack`
+2. `npm run configure`
+3. `yarn start:example-supply-chain`
+
+## Debugging the Example Application Locally
+
+On the terminal, issue the following commands (steps 1 to 6) and then perform the rest of the steps manually.
+
+1. `npm run enable-corepack`
+2. `yarn run configure`
+3. `yarn build:dev`
+4. `cd ./examples/cactus-example-supply-chain-backend/`
+5. `yarn install`
+6. `cd ../../`
+7. Locate the `.vscode/template.launch.json` file
+8. Within that file locate the entry named `"Example: Supply Chain App"`
+9. Copy the VSCode debug definition object from 2) to your `.vscode/launch.json` file
+10. At this point the VSCode `Run and Debug` panel on the left should have an option also titled `"Example: Supply Chain App"` which starts the application
+11. When the application finishes loading, the JWT token generated is displayed on the terminal
+12. Visit http://localhost:3200 in a web browser with Javascript enabled and insert the token when prompted
+
+## Live Reloading the GUI Application
+
+1. `npm run enable-corepack`
+2. `npm run configure`
+3. `yarn build:dev`
+4. Locate the `.vscode/template.launch.json` file
+5. Within that file locate the entry named `"Example: Supply Chain App"`
+6. Copy the VSCode debug definition object from 2) to your `.vscode/launch.json` file
+7. At this point the VSCode `Run and Debug` panel on the left should have an option also titled `"Example: Supply Chain App"` which starts the application
+8. `cd ./examples/cactus-example-supply-chain-frontend/`
+9. `yarn serve:proxy`
+10. When the application finishes loading, the JWT token generated is displayed on the terminal
+11. Visit http://localhost:8000 in a web browser with Javascript enabled and insert the token when prompted
+12. At this point if you modify the source code of the GUI application under the `./examples/cactus-example-supply-chain-frontend/` path it will automatically reload the browser window (you will need to paste in the JWT again when this happens)
+
+
+========== FILE: examples/cactus-example-discounted-asset-trade/README.md ==========
+# Cactus discounted-asset-trade
+
+## Abstract
+
+Cactus discounted-asset-trade is a sample application that calculates asset cost based on customer type. In this application, when the users transfer the asset ownership in the cactus discounted-asset-trade, they present their employee proofs to the asset-owner company to receive an employee discount. We implement the employee proofs by proofs on Hyperledger Indy. Asset ownership is represented by a [asset-transfer-basic](https://github.com/hyperledger/fabric-samples/tree/release-2.2/asset-transfer-basic) chaincodetoken on Hyperledger Fabric, which can be exchanged for ETH currency on a private Ethereum blockchain. This Business Logic Plugin (BLP) application controls a process from employee certification using Hyperledger Indy to payment using Ethereum.
+
+![discounted-asset-trade image](./image/discounted-asset-trade-image.png)
+
+## Scenario
+
+The application works in the following scenario:
+
+### Settings
+
+Alice wants to buy an asset using the services of company Thrift Corp. Alice chose this company because she is an employee of Acme Corp., which offers discounts on Thrift Corp.'s services as a benefit.
+
+**Note** : Acme Corp and Thrift Corp have the same names on the sample application on Hyperledger Indy.
+
+### Preparations
+
+Alice knows that Acme Corp. provides digital certificates. She asks Acme Corp. to issue a credential when she uses various services, and the company issues it.
+
+### When Alice Uses the Service
+
+- Alice will use her client application to connect with discounted-asset-trade BLP application. This will create anoncreds connection between her and the BLP app.
+- Alice will send a purchase order to the BLP application.
+- BLP will request the proof of employment from Alice client application.
+- Once verified, the BLP will decide what she should pay based on the price list and then proceed with the business logic using cactus as an escrow to transfer ETH currencies and asset ownership tokens to each other.
+
+## Setup Overview
+
+### fabric-connector
+
+- Validator for fabric ledger.
+- Started as part of discounted asset trade BLP.
+
+### ethereum-validator
+
+- Validator for ethereum ledger.
+- Started as part of discounted asset trade BLP.
+
+### cmd-socketio-base-image
+
+- Base image for `cactus-example-discounted-asset-trade` BLP.
+- Contains cactus cmd socketio server module
+- It will build the image and immediately exit on run.
+
+### cactus-example-discounted-asset-trade-blp
+
+- Main logic for this sample application.
+- Use it's endpoint (`localhost:5034`) to interact the bussiness logic.
+- Docker network: `cactus-example-discounted-asset-trade-net`
+
+## Indy Schema
+
+![Indy node pool and validator](./image/indy-setup-schema.svg)
+
+## Preparations
+
+1. Configure Cactus:
+
+   ```
+   # execute in root cactus dir
+   pushd ../..
+   npm run configure
+   popd
+   ```
+
+1. Create settings directory and make sure you have write permission on it
+
+   ```bash
+   sudo mkdir /etc/cactus
+   sudo chown -R __YOUR_USERNAME__ /etc/cactus/
+   ```
+
+1. Start the ledgers:
+
+   ```
+   ./script-start-ledgers.sh
+   ```
+
+   - This script will start all ledger docker containers, networks, and will setup configuration needed to operate the sample app.
+   - (NOTICE: Before executing the above, your account needs to be added to the docker group (`usermod -a -G docker YourAccount` from root user))
+   - On success, this should start three containers:
+     - `geth1`
+     - `asset_trade_faio2x_testnet`
+     - `asset_trade_indy_all_in_one`
+
+1. Setup Indy credentials:
+
+   - Before running the sample application we need to register employment credential and issue it to Alice (user of our app).
+   - Use `setup-credentials` script from `cactus-example-discounted-asset-trade-client`.
+
+   ```bash
+   # In separate shell (can be used later for client app)
+   cd ./examples/cactus-example-discounted-asset-trade-client
+   yarn setup-credentials
+   popd
+   ```
+
+   - Copy the credential definition ID from the script output into this example application BLP configuration.
+
+     ```bash
+     # setup-credentials script output
+     Running with log level INFO
+     Connecting Alice with Issuer...
+     Connecting aliceCactiAgent to issuerCactiAgent...
+     Agents connected!
+     Register and issue the employment credential...
+     Register Credential Schema...
+     Register employment certificate credential schema 'cactiJobCert'...
+     Employment credential schemaId: did:indy:cacti:test:Th7MpTaRZVRYnPiabds81Y/anoncreds/v0/SCHEMA/cactiJobCert/1.0.0
+     Register Credential Definition...
+     Register job certificate credential definition (schemaId: 'did:indy:cacti:test:Th7MpTaRZVRYnPiabds81Y/anoncreds/v0/SCHEMA/cactiJobCert/1.0.0') ...
+     # COPY THIS >>
+     Employment credential credentialDefinitionId: did:indy:cacti:test:Th7MpTaRZVRYnPiabds81Y/anoncreds/v0/CLAIM_DEF/11/default
+     # <<
+     Issue the credential...
+     Employment credential issued: 7f93ba15-98b2-4667-a7cf-ecec3059e9d4
+     Accepting credential eb69032d-ec73-4fa1-bd83-1ff52a0dc4b5...
+     Credential accepted!
+     Credential was issed and accepted by a peer agent!
+     Verify employment status proof...
+     Proof request was sent
+     Accepting proof 4d03e479-073a-4f51-98e4-befd7ba34345...
+     Proof request accepted!
+     Requested proof status: done
+     Finishing - cleaning up the agents...
+     All done.
+
+     # Replace __CREDENTIAL_DEFINITION_ID__ in config file with actual credentialDefinitionId
+     sed -i 's#__CREDENTIAL_DEFINITION_ID__#did:indy:cacti:test:Th7MpTaRZVRYnPiabds81Y/anoncreds/v0/CLAIM_DEF/11/default#g' "./etc/cactus/usersetting.yaml"
+
+     # ... or do it manually in text editor
+     vim ./etc/cactus/usersetting.yaml
+     ```
+
+1. Launch discounted-asset-trade and validators from local `docker-compose.yml` (use separate console for that, docker-compose will block your prompt):
+
+   ```
+   docker-compose build && docker-compose up
+   # or
+   npm run start
+   ```
+
+   This will build and launch all needed containers, the final output should look like this:
+
+   ```
+   ...
+   cactus-example-discounted-asset-trade-indy-validator | 2022-01-31 16:00:49,552 INFO success: validator entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+   ...
+   cactus-example-discounted-asset-trade-indy-validator-nginx | 2022/01/31 16:00:49 [notice] 1#1: start worker process 35
+   ...
+   cmd-socketio-base-dummy exited with code 0
+   ...
+   cactus-example-discounted-asset-trade-blp      | [2022-01-31T16:00:56.208] [INFO] www - listening on *: 5034
+   ```
+
+### Dockerless run
+
+For development purposes, it might be useful to run the sample application outside of docker-compose environment.
+
+1. Configure cactus and start the ledgers as described above.
+1. Run `./script-dockerless-config-patch.sh` from `cactus-example-discounted-asset-trade/` directory. This will patch the configs and copy it to global location.
+1. Start asset-trade: `npm run start-dockerless`
+
+## How to use this application
+
+- Use `run-discounted-asset-trade-client` script from `cactus-example-discounted-asset-trade-client` to interact with this application.
+
+  ```bash
+  # In separat shell
+  cd ./examples/cactus-example-discounted-asset-trade-client
+  yarn run-discounted-asset-trade-client
+
+  # Sample output
+  Running with log level INFO
+  Connected to the discounted asset trade sample app agent! ID: 19949a1e-0ef6-449b-9c37-256449258b51
+  Action: (Use arrow keys)
+  ❯ Start the trade
+    Get this agent credentials
+    Get assets
+    Exit
+  ```
+
+1. (Optional) Check credentials in Alice wallet by selecting `Get this agent credentials`.
+
+   ```bash
+   Action: Get this agent credentials
+   [
+     {
+       "id": "eb69032d-ec73-4fa1-bd83-1ff52a0dc4b5",
+       "schemaId": "did:indy:cacti:test:Th7MpTaRZVRYnPiabds81Y/anoncreds/v0/SCHEMA/cactiJobCert/1.0.0",
+       # Note: This credential matches one we'll be requesting in discounted asset trade example
+       "credentialDefinitionId": "did:indy:cacti:test:Th7MpTaRZVRYnPiabds81Y/anoncreds/v0/CLAIM_DEF/11/default",
+       "connectionId": "32134b50-a245-4de5-8408-f35fcb069373",
+       "credentials": [
+         {
+           "credentialRecordType": "anoncreds",
+           "credentialRecordId": "dd6aba0c-8674-451d-a063-a630004be1dd"
+         }
+       ],
+       "credentialAttributes": [
+         {
+           "mime-type": "text/plain",
+           "name": "first_name",
+           "value": "Alice"
+         },
+         {
+           "mime-type": "text/plain",
+           "name": "last_name",
+           "value": "Garcia"
+         },
+         {
+           "mime-type": "text/plain",
+           "name": "salary",
+           "value": "2400"
+         },
+         {
+           "mime-type": "text/plain",
+           "name": "employee_status",
+           # Note: Alice is a permanent employee
+           "value": "Permanent"
+         },
+         {
+           "mime-type": "text/plain",
+           "name": "experience",
+           "value": "10"
+         }
+       ]
+     }
+   ]
+   ```
+
+1. (Optional) Check the balance on Ethereum and the asset ownership on Fabric by selecting `Get assets`.
+
+   ```bash
+   Action: Get assets
+
+   # Ethereum fromAccount:
+   1.00005515e+26
+
+   # Ethereum escrowAccount:
+   0
+
+   # Ethereum toAccount:
+   0
+
+   # Fabric:
+   [
+     {
+         ...
+     },
+     {
+         ID: 'asset2',
+         color: 'red',
+         size: 5,
+         owner: 'Brad',
+         appraisedValue: 400
+     },
+     ...
+   ]
+   ```
+
+1. Run the transaction execution by selecting `Start the trade`
+
+   ```bash
+   Action: Start the trade
+   Trade request sent! Response: { tradeID: '20231103185232057-001' }
+   ```
+
+1. (Optional) Check the final balance on Ethereum and the asset ownership on Fabric by selecting `Get assets`.
+
+   ```bash
+   Action: Get assets
+
+   # Ethereum fromAccount:
+   1.000057e+26
+
+   # Ethereum escrowAccount:
+   0
+
+   # Ethereum toAccount:
+   25
+
+   # Fabric:
+   [
+     {
+         ...
+     },
+     {
+         ID: 'asset2',
+         color: 'red',
+         size: 5,
+         owner: 'Cathy',
+         appraisedValue: 400
+     },
+     ...
+   ]
+   ```
+
+## How to stop the application and Docker containers
+
+1. Press `Ctrl+C` in `docker-compose` console to stop the application.
+1. Run cleanup script
+
+   ```
+
+   sudo ./script-cleanup.sh # for root owned files
+   ./script-cleanup.sh # for user owner files
+
+   ```
+
+#### Manual cleanup instructions
+
+1. Remove the config files on your machine
+
+   ```
+
+   sudo rm -r ./etc/cactus/
+
+   ```
+
+1. Stop the docker containers of Ethereum, Fabric and Indy
+
+   - `docker stop geth1 asset_trade_faio2x_testnet asset_trade_indy_all_in_one`
+   - `docker rm geth1 asset_trade_faio2x_testnet asset_trade_indy_all_in_one`
+
+1. Clear indy-all-in-one
+
+   ```
+
+   pushd ../../tools/docker/indy-all-in-one/
+   ./script-cleanup.sh
+   popd
+
+   ```
+
+1. Remove geth files
+
+   ```
+
+   pushd ../../tools/docker/geth-testnet/
+   rm -fr ./data-geth1/geth/
+   popd
+   ```
+
+
+========== FILE: examples/cactus-example-electricity-trade/README.md ==========
+# Cactus electricity-trade
+
+## Abstract
+
+Cactus **electricity-trade** is a sample application for exchanging electricity (which is measured by a device that is logging to a Sawtooth blockchain) for ETH currency on a private Ethereum blockchain. When the measuring device detects power usage, a Sawtooth transaction triggers a Cactus LedgerEvent to pay the device user's currency on the Ethereum blockchain, where the amount paid is proportional to the amount of power usage recorded on the Sawtooth blockchain.
+In this example, we use the Sawtooth intkey transaction processor as an application for power measurement logging.
+
+![electricity-trade image](./images/electricity-trade-image.png)
+
+## Required software components
+
+- OS: Linux (recommend: Ubuntu18.04 or CentOS7)
+- Docker (recommend: v17.06.2-ce or greater)
+- Docker-compose (recommend: v1.14.0 or greater)
+- node.js v12 (recommend: v12.20.2 or greater)
+
+## Prerequisites
+
+- Available directory (This directory must be empty):
+  - `./etc/cactus`: the directory for storing the config files of `cactus-common-example-server`, will be mounted by the containers.
+
+## Setup
+
+1. Configure Cactus:
+
+   ```
+   # execute in root cactus dir
+   pushd ../..
+   npm run configure
+   popd
+   ```
+
+1. Start the ledgers:
+
+   ```
+   ./script-start-ledgers.sh
+   ```
+
+   - This script will start all ledger docker containers, networks, and will setup configuration needed to operate the sample app.
+   - (NOTICE: Before executing the above, your account needs to be added to the docker group (`usermod -a -G docker YourAccount` from root user))
+   - On success, this should start the following containers:
+     - `sawtooth_all_in_one_ledger_1x`
+     - `geth1`
+
+1. Launch electricity-trade and validators from local `docker-compose.yml` (use separate console for that, docker-compose will block your prompt):
+
+   ```
+   docker-compose build && docker-compose up
+   # or
+   npm run start
+   ```
+
+   This will build and launch all needed containers, the final output should look like this:
+
+   ```
+   cmd-socketio-base-dummy    | OK - Exit
+   cmd-socketio-base-dummy exited with code 0
+   cactus-example-electricity-trade-blp      | [2022-02-14T15:47:47.312] [INFO] www - Using BLP with id = h40Q9eMD
+   cactus-example-electricity-trade-blp      | start Dynamic loading.
+   cactus-example-electricity-trade-blp      | path: /api/v1/bl/cactus-example-electricity-trade/, routerJs: /root/cactus/dist/cactus-example-electricity-trade.js
+   cactus-example-electricity-trade-blp      | path: /api/v1/bl/balance/, routerJs: /root/cactus/dist/balance.js
+   cactus-example-electricity-trade-blp      | [2022-02-14T15:47:47.399] [INFO] www - listening on *: 5034
+   ```
+
+### Dockerless run
+
+For development purposes, it might be useful to run the sample application outside of docker-compose environment.
+
+1. Configure cactus and start the ledgers as described above.
+1. Run `./script-dockerless-config-patch.sh` from `cactus-example-electricity-trade/` directory. This will patch the configs and copy it to global location.
+1. Start electricity-trade: `npm run start-dockerless`
+
+## How to use this application
+
+- Source account on Ethereum: `06fc56347d91c6ad2dae0c3ba38eb12ab0d72e97`
+- The privkey of source account on Ethereum: `cb5d48d371916a4ea1627189d8af4f642a5d72746a06b559780c3f5932658207`
+- Destination account on Ethereum: `9d624f7995e8bd70251f8265f2f9f2b49f169c55`
+- The key name of intkey on Sawtooth: `MI000001`
+
+1. (Optional) Check the balance on ethereum accounts and current electricity usage
+
+   - `./script-get-app.sh`
+
+   The result looks like the following (note there's no electricity usage yet so the output is empty):
+
+   ```
+   # Source Eth balance:
+   100000
+
+   # Destination Eth balance:
+   0
+
+   # Electricity usage
+   ```
+
+1. Register an account information
+
+   ```
+   ./script-post-setup-request.sh
+   ```
+
+   ... or send request manually:
+
+   ```
+   curl localhost:5034/api/v1/bl/electricity-trade/meter/register/ -XPOST -H "Content-Type: application/json" -d '{"businessLogicID":"h40Q9eMD","meterParams":["MI000001", "06fc56347d91c6ad2dae0c3ba38eb12ab0d72e97", "cb5d48d371916a4ea1627189d8af4f642a5d72746a06b559780c3f5932658207", "9d624f7995e8bd70251f8265f2f9f2b49f169c55"]}'
+   ```
+
+1. Start the electricity-trade application
+
+   - The example response of tradeID: `{"tradeID":"20210220075755506-001"}`
+   - (Then, the application starts to monitor the Sawtooth blockchain)
+
+   ```
+   ./script-post-start-request.sh
+   ```
+
+   ... or send request manually:
+
+   ```
+   curl localhost:5034/api/v1/bl/electricity-trade/ -XPOST -H "Content-Type: application/json" -d '{"businessLogicID":"h40Q9eMD"}'
+   ```
+
+1. Execute the intkey transaction on Sawtooth blockchain
+
+   - `./script-gen-electricity-usage.sh`
+
+   The result looks like the following:
+
+   ```
+   # Create intkey batch representing electricity usage
+   {
+   "link": "http://rest-api:8008/batch_statuses?id=4e85337e170917c138e4f7de44c85c9dea9c5e17916fded672b90adb85a07ca009002580f8629660e26e1117e9ac15f4c1164d9dc05fc77ac8e212672dc5e97a"
+   }
+   # Increase usage
+   {
+   "link": "http://rest-api:8008/batch_statuses?id=88b4dfa2128c7ad4b646b4fe6be878948f7c17651baf9c6384080a9eaae5036e219c432b46f74331a2d56b80bf2dcc94496ff261d1a941f23210d637badacf14"
+   }
+   ```
+
+1. (Optional) Check the balance on Ethereum accounts using the following script (after `##remittanceTransaction sendAsyncRequest finish` is printed)
+
+   - `./script-get-app.sh`
+
+   The result looks like the following:
+
+   ```
+   # Source Eth balance:
+   99976
+
+   # Destination Eth balance:
+   24
+
+   # Electricity usage
+   MI000001: 74
+   ```
+
+## How to stop the application and cleanup Docker containers
+
+1. Press `Ctrl+C` in `docker-compose` console to stop the application.
+1. Run cleanup script
+   ```
+   sudo ./script-cleanup.sh
+   ```
+
+
+========== FILE: examples/cactus-example-cbdc-bridging/README.md ==========
+# Hyperledger Cactus Example - CBDC Bridging between Fabric and Besu
+
+## Running the backend
+
+> Make sure you have all the dependencies set up as explained in `BUILD.md`
+
+On the terminal, issue the following commands in the project root:
+
+1. `npm run configure`
+2. `npm run start:example-cbdc-bridging-app`
+
+Wait for the output to show the message `CbdcBridgingApp running...`
+
+## Running the frontend
+
+### Using a pre-built Docker image
+
+In a second terminal run:
+
+`docker run -p 2000:2000 aaugusto11/cactus-example-cbdc-bridging-frontend`
+
+### Running manually in live-reload mode
+
+In a second terminal run (in the project root):
+
+1. `cd examples/cactus-example-cbdc-bridging-frontend`
+2. `npm i`
+3. `npm start`
+
+Visit `localhost:2000` and interact with the application. Do not change the port in your local machine, otherwise, the API servers might reject the requests.
+
+
+========== FILE: examples/cactus-example-cbdc-bridging-frontend/README.md ==========
+# Getting Started with Create React App
+
+## Run with Docker
+
+### Using a pre-built image
+
+`docker run -p 2000:2000 aaugusto11/cactus-example-cbdc-bridging-frontend:v2`
+
+### Building the image locally
+
+```
+docker build -t cbdc-app-frontend .
+
+docker run -p 2000:2000 cbdc-app-frontend
+```
+
+### Running in debug mode
+
+```
+yarn start
+```
+### Config Variables  
+
+```
+PORT=2000 // port where the frontend will be running
+REACT_APP_BACKEND_PATH=http://localhost:9999 // set this to the path where the cbdc backend is running
+```
+
+Runs the app in the development mode.\
+Open [http://localhost:2000](http://localhost:2000) to view it in the browser.
+
+The page will reload if you make edits.\
+You will also see any lint errors in the console.
+
+
+========== FILE: examples/cactus-example-carbon-accounting-backend/README.md ==========
+[FILE NOT FOUND]
+
+
+========== FILE: examples/cactus-example-carbon-accounting-frontend/README.md ==========
+[FILE NOT FOUND]
+
+
+========== FILE: examples/carbon-accounting/README.md ==========
+# Cactus Blockchain Carbon Accounting Example
+
+This is an implementation of the Hyperledger CA2 SIG's similarly named project
+(which has multiple different DLTs working together),
+but one that uses Hyperledger Cactus as its development framework instead of
+relying on the vanilla ledger SDKs.
+
+At the same time this is also a case study of how can a real world project be
+delivered with Hyperledger Cactus.
+
+## Usage
+
+Further details and documentation to be defined later.
+
+## Building and running the container locally
+
+```sh
+# Change directories to the project root
+
+# Build the dockar image and tag it as "caeb" for carbon accounting example backend
+DOCKER_BUILDKIT=1 docker build -f ./examples/carbon-accounting/Dockerfile . -t caeb
+
+# Run the built image with ports mapped to the host machine as you see fit
+# The --privileged flag is required because we use Docker-in-Docker for pulling
+# up ledger containers from within the container in order to have the example
+# be completely self-contained where you don't need to worry about running
+# multiple different ledgers just this one container.
+docker run --rm -it --privileged -p 3000:3000 -p 3100:3100 -p 3200:3200 -p 4000:4000 -p 4100:4100 -p 4200:4200 caeb
+```
+
+========== FILE: cacti-demos/README.md ==========
+# SATP Gateway Demo
+
+This repository contains a demo implementation of a **SATP (Secure Asset Transfer Protocol) Gateway**, designed to act as middleware between EVM-based blockchains. It supports various interoperability use cases explained below.
+
+## Table of Contents
+- [SATP Gateway Demo](#satp-gateway-demo)
+  - [Table of Contents](#table-of-contents)
+  - [Repository Structure](#repository-structure)
+  - [Case Descriptions](#case-descriptions)
+    - [Extensions Cases](#extensions-cases)
+    - [Oracle Cases (gateway/oracle)](#oracle-cases-gatewayoracle)
+    - [SATP Cases (gateway/satp/)](#satp-cases-gatewaysatp)
+  - [EVM Test Environment](#evm-test-environment)
+  - [Important Instructions](#important-instructions)
+  - [Setup \& Running](#setup--running)
+    - [Running Cases with the Makefile](#running-cases-with-the-makefile)
+  - [Dependencies](#dependencies)
+  - [Contact](#contact)
+
+## Repository Structure
+
+```
+.
+├── EVM/                          # Hardhat project for setting up test EVM blockchains
+├── gateway/
+│   └── extensions/
+│       └── carbon-credit/        # Extending core gateway logic with business-related functionality
+│   └── oracle/
+│       ├── case_1/               # Middleware: Manual READ and WRITE
+│       ├── case_2/               # Middleware: Auto READ and WRITE
+│       ├── case_3/               # Register polling for periodic READ
+│       ├── case_4/               # Event listening for READ and UPDATE
+│       ├── case_5/               # Middleware: Manuel READ and WRITE (w/ Hyperledger Fabric)
+│       └── case_6/               # Register polling for periodic READ and WRITE (w/ Hyperledger Fabric)
+│       └── case_7/               # Event listening for READ and WRITE (w/ Hyperledger Fabric)
+│   └── satp/
+│       └── case_1/               # SATP Protocol: Fungible asset transfer between EVM blockchains
+│       └── case_2/               # SATP Protocol: Non fungible asset transfer between EVM blockchains
+│       └── case_3/               # SATP Protocol: Fungible asset transfer between 3 different EVM blockchain pairs
+```
+
+---
+
+## Case Descriptions
+
+### Extensions Cases
+
+These use cases demonstrate the usage of the extensions available in the gateway:
+* **Carbon Credit Extension**: Demonstrates purchasing and retiring carbon credits using the Carbon Credit extension integrated into the gateway. The extension interacts with carbon credit marketplaces on EVM blockchains. At this point, the only marketplace supported is **Toucan Protocol**.
+
+### Oracle Cases (gateway/oracle)
+
+These use cases demonstrate the usage of the gateway as middleware to interact with EVM blockchains:
+
+* **Case 1**: Manual **READ and WRITE** operations using the gateway
+* **Case 2**: Automatic **READ and WRITE** operations using the gateway
+* **Case 3**: Registering a **polling task** to periodically READ from an EVM blockchain
+* **Case 4**: **Cross-chain event listening** with subsequent READ and conditional UPDATE actions
+
+### SATP Cases (gateway/satp/)
+
+The SATP folder contains secure asset transfer protocol cases.
+
+* **Case 1**: Coordinated **READ and WRITE** using the gateway across blockchains, following SATP protocol.
+* **Case 2**: Coordinated **READ and WRITE** using the gateway across blockchains, following SATP protocol.
+* **Case 3**: Coordinated **READ and WRITE** using the gateway across blockchains, following SATP protocol, between 3 blockchain pairs, and always using the same assets, starting in blockchain1.
+
+---
+
+## EVM Test Environment
+
+The `EVM/` directory contains a **Hardhat** project used to deploy and simulate blockchain networks and contracts for the various gateway and SATP test cases.
+
+* Located under `EVM/ignition/modules`, you will find simple deployment scripts and interaction modules with **hardcoded addresses** for clarity and reproducibility during testing.
+
+---
+
+## Important Instructions
+
+* **Please follow the setup instructions for each case carefully.**
+* **Before switching from one case to another**, **always rerun all setup commands** to ensure:
+
+  * The environment is **fully refreshed**
+  * **Contract addresses remain consistent**
+  * No residual data or processes from other cases affect the results
+
+Failure to reset the environment between cases may lead to unexpected behavior due to mismatched or stale blockchain state/configurations.
+
+---
+
+
+## Setup & Running
+
+### Running Cases with the Makefile
+
+You can use the provided `Makefile` to automate setup and environment preparation for the demo. Run:
+
+```bash
+make help
+```
+
+to see all available targets for building, deploying, and running the demo cases. The main targets are:
+
+- `make run-oracle-case-1` — Oracle Case 1: Manual READ and WRITE
+- `make run-oracle-case-2` — Oracle Case 2: Automatic READ and WRITE
+- `make run-oracle-case-3` — Oracle Case 3: Register polling for periodic READ
+- `make run-oracle-case-4` — Oracle Case 4: Event listening + READ and UPDATE
+- `make run-satp-case-1`   — SATP Case 1: Fungible asset transfer protocol
+- `make run-satp-case-2`   — SATP Case 2: Non fungible asset transfer protocol
+- `make run-satp-case-3`   — SATP Case 3: Fungible asset transfer protocol between 3 different blockchain pairs
+- `make run-all-cases`      — Run all cases sequentially with cleanup between each
+
+Each case also includes its own `README.md` with step-by-step instructions for manual or advanced usage.
+
+The Hyperledger Fabric cases (gateway/oracle/case_5, case_6, case_7) require additional setup steps as described in their respective READMEs, and therefore cannot be fully automated via the Makefile.
+
+**Note:** `.PHONY` targets are now placed immediately after each script in the Makefile for clarity and maintainability.
+
+---
+
+## Dependencies
+
+* [Docker & Docker Compose](https://docs.docker.com/compose/)
+* [Hardhat](https://hardhat.org/)
+* Python ≥ 3.8
+
+---
+
+## Contact
+
+For questions or collaboration inquiries, feel free to reach out or open an issue on this repository.
+
+
+========== FILE: cacti-demos/gateway/README.md ==========
+# Getting Started with SATP (Secure Asset Transfer Protocol)
+
+## Table of Contents
+- [Getting Started with SATP (Secure Asset Transfer Protocol)](#getting-started-with-satp-secure-asset-transfer-protocol)
+  - [Table of Contents](#table-of-contents)
+  - [Setting Up Your Gateway](#setting-up-your-gateway)
+    - [Gateway Configuration](#gateway-configuration)
+    - [Gateway Configuration](#gateway-configuration-1)
+    - [Repositories Configuration](#repositories-configuration)
+    - [Network Configuration](#network-configuration)
+      - [For EVM Networks:](#for-evm-networks)
+  - [Running Your Gateway](#running-your-gateway)
+    - [Using Docker Compose](#using-docker-compose)
+  - [Interacting with Your Gateway](#interacting-with-your-gateway)
+    - [API Usage](#api-usage)
+      - [Check Gateway Health](#check-gateway-health)
+
+## Setting Up Your Gateway
+
+### Gateway Configuration
+
+Create a configuration file `config.json` for your SATP gateway with the following schema:
+
+```json
+{
+  // configuration for the gateway to be created
+  "gid": {
+    <GATEWAY_CONFIG>
+  },
+  "logLevel": "TRACE",
+  "counterPartyGateways": [
+    // configuration for other existing gateways, such that they can communicate with one another
+    <COUNTERPARTY_GATEWAY_1_CONFIG>,
+    <COUNTERPARTY_GATEWAY_2_CONFIG>,
+    ...
+  ],
+  "localRepository": {
+    // configuration for the local database used to store logs from the execution of SATP
+    <DB_CONNECTION_1>,
+    }
+  },
+  "remoteRepository": {
+    // configuration for the remote database used to store logs from the execution of SATP
+    <DB_CONNECTION_2>,
+  },
+  "ccConfig": {
+    "bridgeConfig": [
+      // configuration for the usage of SATP related endpoints
+      <NETWORK_CONFIG_1>,
+      <NETWORK_CONFIG_2>,
+      ...
+    ],
+    "oracleConfig": [
+      // configuration for the usage of Oracle related endpoints
+      <NETWORK_CONFIG_1>,
+      <NETWORK_CONFIG_2>,
+      ...
+    ]
+  },
+  "environment": "development",
+  "enableCrashRecovery": false,
+  "ontologyPath": "/opt/cacti/satp-hermes/ontologies"
+}
+```
+
+### Gateway Configuration
+
+You'll need to configure the gateway to be created and fill in <GATEWAY_CONFIG> and <COUNTERPARTY_GATEWAY_X_CONFIG>.
+
+```json
+{
+  "id": "mockID",
+  "name": "CustomGateway",
+  "version": [
+    {
+      "Core": "v02",
+      "Architecture": "v02",
+      "Crash": "v02"
+    }
+  ],
+  "connectedDLTs": [
+    {
+      "id": "BesuLedgerTestNetwork",
+      "ledgerType": "BESU_2X"
+    }
+  ],
+  "proofID": "mockProofID10",
+  "address": "http://gateway1.satp-hermes",
+  "gatewayClientPort": 3011,
+  "gatewayServerPort": 3010,
+  "gatewayOapiPort": 4010,
+  "keyPair": {
+    "privateKey": "XXX",
+    "publicKey": "XXX"
+  },
+}
+```
+
+### Repositories Configuration
+
+You may need to configure the local and remote repositories to be created and fill in <DB_CONNECTION_X>. This is only necessary if you want to use a custom database to store logs from the execution of SATP. If not specified, the gateway will create a SQlit database.
+
+```json
+{
+  "client": "<DB_CLIENT>",
+  "connection": {
+    "host": "<DB_HOST>",
+    "user": "<DB_USER>",
+    "password": "<DB_PASSWORD>",
+    "database": "<DB_DATABASE>",
+    "port": <DB_PORT>,
+    "ssl": <USE_SSL>
+  }
+}
+```
+
+### Network Configuration
+
+You'll need to configure each blockchain you want to connect to and fill in <NETWORK_CONFIG_X>.
+
+#### For EVM Networks:
+```json
+{
+  "networkIdentification": {
+    "id": "EthereumLedgerTestNetwork",
+    "ledgerType": "ETHEREUM"
+  },
+  "signingCredential": {
+    "ethAccount": "<YOUR_ETHEREUM_ADDRESS>",
+    "secret": "<YOUR PRIVATE KEY>",
+    "type": "GETH_KEYCHAIN_PASSWORD"
+  },
+  "gasConfig": {
+    "gas": "<GAS>",
+    "gasPrice": "<GAS_PRICE>"
+    # or gasLimit, maxFeePerGas, maxPriorityFeePerGas as per EIP1559
+  },
+  "connectorOptions": {
+    "rpcApiHttpHost": "http://<HTTP_HOST>:<HTTP_PORT>",
+    "rpcApiWsHost": "ws://<WS_HOST>:<WS_PORT>"
+  },
+  "claimFormats": [
+    1
+  ]
+}
+```
+
+## Running Your Gateway
+
+## Using Docker Compose
+
+1. Create a `docker-compose.yml`:
+```yaml
+version: '3.8'
+services:
+  satp-gateway:
+    image: aaugusto11/cacti-satp-hermes-gateway:215ad342b-2025-05-29
+    volumes:
+      - ./config/gateway-1-config.json:/opt/cacti/satp-hermes/config/config.json
+      - ./satp-hermes-gateway/gateway-1/logs:/opt/cacti/satp-hermes/logs
+    ports:
+      - 3010:3010/tcp # SERVER_PORT
+      - 3011:3011/tcp # CLIENT_PORT
+      - 4010:4010/tcp # OAPI_PORT
+```
+
+2. Start the services:
+```bash
+# Interactive mode
+docker-compose up
+
+# Detached mode
+docker-compose up -d
+```
+
+3. Stop the services:
+```bash
+docker-compose down
+```
+
+## Interacting with Your Gateway
+
+### API Usage
+
+The SATP Gateway provides a comprehensive REST API (API1) for managing asset transfers. All endpoints are available at `http://localhost:4010/api/v1/@hyperledger/cactus-plugin-satp-hermes/`. The specification of the endpoints can be found in the [OpenAPI Specification](https://github.com/hyperledger-cacti/cacti/blob/1c1d9021d631d08740683e17513d532b60b5ef66/packages/cactus-plugin-satp-hermes/src/main/json/openapi-blo-bundled.json).
+
+#### Check Gateway Health
+
+```bash
+curl -X GET http://localhost:4010/api/v1/@hyperledger/cactus-plugin-satp-hermes/healthcheck
+```
+
+
+========== FILE: cacti-demos/gateway/satp/case_1/README.md ==========
+# Case 1: Using the Gateway as Middleware for READ_AND_WRITE in EVM-based blockchains
+
+This test case demonstrates how the Gateway can run the Secure Asset Transfer Protocol (SATP) between 2 EVM-based blockchains. The idea is to use the Gateway as a middleware to burn the original asset in the source blockchain and mint a representation on the destination blockchain.
+
+For this, we will use the `SATPTokenContract` contract, which is a simple contract that resembles a token contract following the ERC20 standard.
+
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for in this case:
+
+- **Terminal 1:** Run the Gateway (Docker Compose)
+- **Terminal 2:** Start Hardhat EVM Blockchain 1 (port 8545)
+- **Terminal 3:** Start Hardhat EVM Blockchain 2 (port 8546)
+- **Terminal 4:** Deploy the SATPTokenContract to both blockchains
+- **Terminal 5:** Run SATP protocol scripts (integration checks, transactions, status, audit)
+
+This pattern is similar in other SATP and Oracle cases:
+- **Gateway terminals** (usually Terminal 1): Always run the Gateway via Docker Compose
+- **EVM/Hardhat terminals** (usually Terminals 2, 3): Start one or more local blockchains
+- **Deployment/Script terminals** (Terminals 4+): Deploy contracts and run interaction scripts
+
+Refer to each case's README for the exact mapping and steps.
+
+## Setup Instructions
+
+
+### 1. Start the Hardhat EVM Blockchains
+
+In terminal 2, from this directory (`gateway/satp/case_1`):
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8545
+```
+
+In terminal 3, from this directory (`gateway/satp/case_1`):
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8546
+```
+
+> ⚠️ Make sure to use `--hostname 0.0.0.0` on both cases so that the Gateway (inside Docker) can access the local Hardhat node.
+
+### 2. Start the Gateway (Docker)
+
+In terminal 1, from this directory:
+
+```bash
+docker compose up
+```
+
+This will start both gateways with the corresponding configuration file located in `./config/gateway-1-config.json` and `./config/gateway-2-config.json`.
+
+**Expected Result**: In Terminal 2 and 3 (both lockchains), observe a contract being deployed. This is the bridge contract `SATPWrapper` that allows the Gateway to interact with the client contracts deployed in EVM-based blockchains.
+
+### 2.5 (Optional) Check the blockchains to which each Gateway is connected
+In terminal 5, from this directory:
+
+```bash
+python3 satp-evm-get-integrations.py
+```
+
+> This script sends a GET request to the Gateway to retrieve the list of integrations (in this case blockchains) to which each Gateway is connected. It will return the list of blockchains and a simplified description.
+
+**Expected Result**: The output should show the two EVM blockchains (Hardhat1 and Hardhat2).
+
+
+### 3. Deploy the Token Smart Contracts
+
+In terminal 4, from this directory (`gateway/satp/case_1`):
+
+```bash
+cd ../../../EVM && node scripts/SATPTokenContract.js
+```
+
+> This deploys the `SATPTokenContract` to the running Hardhat networks (`hardhat1` and `hardhat2` should be configured in `hardhat.config.js` to point to `http://0.0.0.0:8545` and `http://0.0.0.0:8546` respectively). Additionally, it will perform the necessary contract calls necessary to set up the SATP protocol. Check the file to see the details of the operations performed.
+
+### 4. Run the Oracle Interaction Script
+
+In terminal 5, from this directory:
+
+```bash
+python3 satp-transact.py
+```
+
+> This script sends POST requests to the Gateway to trigger the SAT protocol. If successful, it will burn the original asset in the source blockchain and mint a representation on the destination blockchain. Store the `SESSION_ID` returned by the script, as it will be used in the next steps.
+
+---
+
+### 5. Check Task Status
+
+In Terminal 5:
+
+```bash
+python3 satp-evm-check-status.py <SESSION_ID>
+```
+
+**Expected Output**:
+
+* Status: `DONE`
+* Current Step: `transfer-complete-message` (the last step of the SATP)
+
+---
+
+### 6. Perform Audit and Check Operations/Proofs
+
+In Terminal 5:
+
+```bash
+python3 satp-evm-perform-audit.py
+```
+
+> This script sends a GET request to the Gateway to retrieve detailed information about all SATP sessions in which the gateway is involved. It will return the session details, including the transactions hashes and other details of the operations performed.
+
+Check the `/audit` directory to see the audit information.
+
+**Expected Output**: The output should show the session details, including all the messages exchanged in the SATP protocol, transaction hashes, signatures and other details of the operations performed.
+
+
+========== FILE: cacti-demos/gateway/satp/case_2/README.md ==========
+# Case 2: Using the Gateway as Middleware for READ_AND_WRITE in EVM-based blockchains
+
+This test case demonstrates how the Gateway can run the Secure Asset Transfer Protocol (SATP) between 2 EVM-based blockchains. The idea is to use the Gateway as a middleware to burn the original non fungible asset in the source blockchain and mint a representation on the destination blockchain.
+
+For this, we will use the `SATPNonFungibleTokenContract` contract, which is a simple contract that resembles a token contract following the ERC721 standard.
+
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for in this case:
+
+- **Terminal 1:** Run the Gateway (Docker Compose)
+- **Terminal 2:** Start Hardhat EVM Blockchain 1 (port 8545)
+- **Terminal 3:** Start Hardhat EVM Blockchain 2 (port 8546)
+- **Terminal 4:** Deploy the SATPNonFungibleTokenContract to both blockchains
+- **Terminal 5:** Run SATP protocol scripts (integration checks, transactions, status, audit)
+
+This pattern is similar in other SATP and Oracle cases:
+- **Gateway terminals** (usually Terminal 1): Always run the Gateway via Docker Compose
+- **EVM/Hardhat terminals** (usually Terminals 2, 3): Start one or more local blockchains
+- **Deployment/Script terminals** (Terminals 4+): Deploy contracts and run interaction scripts
+
+Refer to each case's README for the exact mapping and steps.
+
+## Setup Instructions
+
+
+### 1. Start the Hardhat EVM Blockchains
+
+In terminal 2, from this directory (`gateway/satp/case_2`):
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8545
+```
+
+In terminal 3, from this directory (`gateway/satp/case_2`):
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8546
+```
+
+> ⚠️ Make sure to use `--hostname 0.0.0.0` on both cases so that the Gateway (inside Docker) can access the local Hardhat node.
+
+### 2. Start the Gateway (Docker)
+
+In terminal 1, from this directory:
+
+```bash
+docker compose up
+```
+
+This will start both gateways with the corresponding configuration file located in `./config/gateway-1-config.json` and `./config/gateway-2-config.json`.
+
+**Expected Result**: In Terminal 2 and 3 (both lockchains), observe a contract being deployed. This is the bridge contract `SATPWrapper` that allows the Gateway to interact with the client contracts deployed in EVM-based blockchains.
+
+### 2.5 (Optional) Check the blockchains to which each Gateway is connected
+In terminal 5, from this directory:
+
+```bash
+python3 satp-evm-get-integrations.py
+```
+
+> This script sends a GET request to the Gateway to retrieve the list of integrations (in this case blockchains) to which each Gateway is connected. It will return the list of blockchains and a simplified description.
+
+**Expected Result**: The output should show the two EVM blockchains (Hardhat1 and Hardhat2).
+
+
+### 3. Deploy the Token Smart Contracts
+
+In terminal 4, from this directory (`gateway/satp/case_2`):
+
+```bash
+cd ../../../EVM && node scripts/SATPNonFungibleTokenContract.js
+```
+
+> This deploys the `SATPNonFungibleTokenContract` to the running Hardhat networks (`hardhat1` and `hardhat2` should be configured in `hardhat.config.js` to point to `http://0.0.0.0:8545` and `http://0.0.0.0:8546` respectively). Additionally, it will perform the necessary contract calls necessary to set up the SATP protocol. Check the file to see the details of the operations performed.
+
+### 4. Run the Oracle Interaction Script
+
+In terminal 5, from this directory:
+
+```bash
+python3 satp-transact.py
+```
+
+> This script sends POST requests to the Gateway to trigger the SAT protocol. If successful, it will burn the original asset in the source blockchain and mint a representation on the destination blockchain. Store the `SESSION_ID` returned by the script, as it will be used in the next steps.
+
+---
+
+### 5. Check Task Status
+
+In Terminal 5:
+
+```bash
+python3 satp-evm-check-status.py <SESSION_ID>
+```
+
+**Expected Output**:
+
+* Status: `DONE`
+* Current Step: `transfer-complete-message` (the last step of the SATP)
+
+---
+
+### 6. Perform Audit and Check Operations/Proofs
+
+In Terminal 5:
+
+```bash
+python3 satp-evm-perform-audit.py
+```
+
+> This script sends a GET request to the Gateway to retrieve detailed information about all SATP sessions in which the gateway is involved. It will return the session details, including the transactions hashes and other details of the operations performed.
+
+Check the `/audit` directory to see the audit information.
+
+**Expected Output**: The output should show the session details, including all the messages exchanged in the SATP protocol, transaction hashes, signatures and other details of the operations performed.
+
+
+========== FILE: cacti-demos/gateway/satp/case_3/README.md ==========
+# Case 3: Using the Gateway as Middleware for READ_AND_WRITE in EVM-based blockchains
+
+This test case demonstrates how the Gateway can run the Secure Asset Transfer Protocol (SATP) between 6 different pairs of EVM-based blockchains. The idea is to use the Gateway as a middleware to burn the original fungible asset in the source blockchain and mint a representation on the destination blockchain three times, with the exact same pair of Gateways, but between different EVM-based blockchains.
+
+For this, we will use the `SATPTokenContract` contract, which is a simple contract that resembles a token contract following the ERC20 standard.
+
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for in this case:
+
+- **Terminal 1:** Run the Gateway (Docker Compose)
+- **Terminal 2:** Start Hardhat EVM Blockchain 1 (port 8545)
+- **Terminal 3:** Start Hardhat EVM Blockchain 2 (port 8546)
+- **Terminal 4:** Start Hardhat EVM Blockchain 3 (port 8547)
+- **Terminal 5:** Deploy the SATPFungibleTokenContract to all blockchains
+- **Terminal 6:** Run SATP protocol scripts (integration checks, transactions, status, audit)
+
+This pattern is similar in other SATP and Oracle cases:
+- **Gateway terminals** (usually Terminal 1): Always run the Gateway via Docker Compose
+- **EVM/Hardhat terminals** (usually Terminals 2, 3 and 4, in this case): Start one or more local blockchains
+- **Deployment/Script terminals** (Terminals 5+): Deploy contracts and run interaction scripts
+
+Refer to each case's README for the exact mapping and steps.
+
+## Setup Instructions
+
+
+### 1. Start the Hardhat EVM Blockchains
+
+In terminal 2, from this directory (`gateway/satp/case_3`):
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8545
+```
+
+In terminal 3, from this directory (`gateway/satp/case_3`):
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8546
+```
+
+In terminal 4, from this directory (`gateway/satp/case_3`):
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8547
+```
+
+> ⚠️ Make sure to use `--hostname 0.0.0.0` on both cases so that the Gateway (inside Docker) can access the local Hardhat node.
+
+### 2. Start the Gateway (Docker)
+
+In terminal 1, from this directory:
+
+```bash
+docker compose up
+```
+
+This will start both gateways with the corresponding configuration file located in `./config/gateway-1-config.json` and `./config/gateway-2-config.json`.
+
+**Expected Result**: In Terminal 2, 3 and 4 (blockchains), observe a contract being deployed. This is the bridge contract `SATPWrapper` that allows the Gateway to interact with the client contracts deployed in EVM-based blockchains. 
+Only Gateway 1 will deploy these contracts. Gateway 2 should use the contract deployed by its counterparty.
+
+### 2.5 (Optional) Check the blockchains to which each Gateway is connected
+In terminal 5, from this directory:
+
+```bash
+python3 satp-evm-get-integrations.py
+```
+
+> This script sends a GET request to the Gateway to retrieve the list of integrations (in this case blockchains) to which each Gateway is connected. It will return the list of blockchains and a simplified description.
+
+**Expected Result**: The output should show all EVM blockchains (Hardhat1, Hardhat2 and Hardhat3).
+
+---
+
+### 3. Deploy the Token Smart Contracts
+
+In terminal 5, from this directory (`gateway/satp/case_3`):
+
+```bash
+cd ../../../EVM && node scripts/SATPTokenContractCase3.js 1
+```
+
+> This deploys the `SATPTokenContract` to the running Hardhat networks (`hardhat1`, `hardhat2` and `hardhat3` which should be configured in `hardhat.config.js` to point to `http://0.0.0.0:8545`, `http://0.0.0.0:8546` and `http://0.0.0.0:8547` respectively). Additionally, it will perform the necessary contract calls necessary to set up the SATP protocol. Check the file to see the details of the operations performed.
+> It requires a command line integer input 1, 2 or 3, depending on which transaction is to be executed out of the three (chain1 -> chain2, chain2 -> chain3, chain3 -> chain1).
+
+---
+
+### 4. Run the Oracle Interaction Script
+
+In terminal 6, from this directory:
+
+```bash
+python3 satp-transact.py 1
+```
+
+> This script sends POST requests to the Gateway to trigger the SAT protocol. If successful, it will burn the original asset in the source blockchain (blockchain1) and mint a representation on the destination blockchain (blockchain2). Store the `SESSION_ID` returned by the script, as it will be used in the next steps.
+> Once again a command line input is required, stating which of the three transactions is to be executed.
+
+---
+
+### 5. Check Task Status
+
+In Terminal 6:
+
+```bash
+python3 satp-evm-check-status.py <SESSION_ID>
+```
+
+**Expected Output**:
+
+* Status: `DONE`
+* Current Step: `transfer-complete-message` (the last step of the SATP)
+
+---
+
+### 6. Update Token Interaction Authorizations
+
+In terminal 5, from this directory (`gateway/satp/case_3`):
+
+```bash
+cd ../../../EVM && node scripts/SATPTokenContractCase3.js 1
+```
+
+> This deploys the `SATPTokenContract` to the running Hardhat networks (`hardhat1`, `hardhat2` and `hardhat3` which should be configured in `hardhat.config.js` to point to `http://0.0.0.0:8545`, `http://0.0.0.0:8546` and `http://0.0.0.0:8547` respectively). Additionally, it will perform the necessary contract calls necessary to set up the SATP protocol. Check the file to see the details of the operations performed.
+> It requires a command line integer input 1, 2 or 3, depending on which transaction is to be executed out of the three (chain1 -> chain2, chain2 -> chain3, chain3 -> chain1). 
+
+---
+
+### 6. Run the Oracle Interaction Script a Second Time
+
+In terminal 6, from this directory:
+
+```bash
+python3 satp-transact.py 2
+```
+
+> This script sends POST requests to the Gateway to trigger the SAT protocol. If successful, it will burn the original asset in the source blockchain (blockchain 2) and mint a representation on the destination blockchain (blockchain3). Store the `SESSION_ID` returned by the script, as it will be used in the next steps.
+> The command line input is again required.
+
+---
+
+### 7. Check Task Status
+
+In Terminal 6:
+
+```bash
+python3 satp-evm-check-status.py <SESSION_ID>
+```
+
+**Expected Output**:
+
+* Status: `DONE`
+* Current Step: `transfer-complete-message` (the last step of the SATP)
+
+---
+
+### 8. Run the Oracle Interaction Script a Third Time
+
+In terminal 6, from this directory:
+
+```bash
+python3 satp-transact.py 3
+```
+
+> This script sends POST requests to the Gateway to trigger the SAT protocol. If successful, it will burn the original asset in the source blockchain (blockchain3) and mint a representation on the destination blockchain (blockchain1). Store the `SESSION_ID` returned by the script, as it will be used in the next steps.
+> The command line input is again required.
+
+---
+
+### 9. Check Task Status
+
+In Terminal 6:
+
+```bash
+python3 satp-evm-check-status.py <SESSION_ID>
+```
+
+**Expected Output**:
+
+* Status: `DONE`
+* Current Step: `transfer-complete-message` (the last step of the SATP)
+
+> This shows that the same Gateway pair can orchestrate SAT sessions between different blockchain pairs, as long as they are connected to the relevant blockchains for the transaction.
+
+---
+
+### 9.5 (Optional) Perform Audit and Check Operations/Proofs
+
+In Terminal 6:
+
+```bash
+python3 satp-evm-perform-audit.py
+```
+
+> This script sends a GET request to the Gateway to retrieve detailed information about all SATP sessions in which the gateway is involved. It will return the session details, including the transactions hashes and other details of the operations performed.
+
+Check the `/audit` directory to see the audit information.
+
+**Expected Output**: The output should show the session details, including all the messages exchanged in the SATP protocol, transaction hashes, signatures and other details of the operations performed.
+
+
+========== FILE: cacti-demos/gateway/oracle/case_1/README.md ==========
+# Case 1: Using the Gateway as Middleware for READ and WRITE in EVM-based blockchains
+
+This example demonstrates how to use the Gateway as a middleware layer to perform both READ and WRITE operations on an EVM-based blockchain (specifically, Hardhat). The scenario shows interaction with a simple smart contract through the Gateway's `/oracle/execute` endpoint.
+
+For this, we will use the `OracleTestContract` contract, which is a simple contract that allows us to store and retrieve data. The contract has two functions:
+
+* **`setData(string memory data)`** – Stores data on-chain and associates it with a `bytes32` ID.
+* **`getData(bytes32 id)`** – Retrieves data from the contract by its ID.
+
+
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for in this case:
+
+- **Terminal 1:** Run the Gateway (Docker Compose)
+- **Terminal 2:** Start Hardhat EVM Blockchain (port 8545)
+- **Terminal 3:** Deploy the OracleTestContract smart contract
+- **Terminal 4:** Run the Oracle interaction script (read/write via Gateway)
+
+This pattern is similar in other Oracle cases:
+- **Gateway terminal** (usually Terminal 1): Always run the Gateway via Docker Compose
+- **EVM/Hardhat terminal(s)** (usually Terminal 2, sometimes 2 and 3): Start one or more local blockchains
+- **Deployment/Script terminal(s)** (Terminals 3+): Deploy contracts and run interaction scripts
+
+Refer to each case's README for the exact mapping and steps.
+
+## Setup Instructions
+
+### 1. Start the Gateway (Docker)
+
+In terminal 1, from this directory:
+
+```bash
+docker compose up
+```
+
+This will start the Gateway with the corresponding configuration file located in `./config/config-oracle-execute-manual-read-and-write.json`.
+
+
+
+
+### 2. Start the Hardhat EVM Blockchain
+
+In terminal 2, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8545
+```
+
+> ⚠️ Make sure to use `--hostname 0.0.0.0` so that the Gateway (inside Docker) can access the local Hardhat node.
+
+
+### 3. Deploy the Smart Contract
+
+In terminal 3, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat ignition deploy ./ignition/modules/OracleTestContract.js --network hardhat1
+```
+
+> This deploys the `OracleTestContract` to the running Hardhat network (`hardhat1` should be configured in `hardhat.config.js` to point to `http://0.0.0.0:8545`).
+
+
+### 4. Run the Oracle Interaction Script
+
+In terminal 4, from this directory (`gateway/oracle/case_1`):
+
+```bash
+python3 oracle-execute-manual-read-and-write.py
+```
+
+> This script sends POST requests to the Gateway to trigger contract `setData` and `getData` functions via `/oracle/execute`.
+
+---
+
+## Result
+
+Check the logs in terminal 4 where you executed the `oracle-execute-manual-read-and-write.py` script. You should see the following:
+1. The response from the Gateway confirming the transaction (write) to the EVM-based blockchain.
+2. The response from the Gateway confirming the read result from the EVM-based blockchain.
+
+```shell
+COMPLETE
+```
+
+Also check the logs in terminal 2 where you started the Hardhat node. You should see logs confirming the transaction (write) and the read result, verifying that the Gateway is functioning as a middleware for interacting with EVM-based blockchains.
+
+
+Finally, you can access the `./satp-hermes-gateway/logs/` directory (relative to this case folder) to see the logs generated by the Gateway. The logs will contain detailed information about the requests and responses, including any errors or warnings that may have occurred during the process.
+
+
+========== FILE: cacti-demos/gateway/oracle/case_2/README.md ==========
+# Case 2: Using the Gateway as Middleware for READ_AND_WRITE in EVM-based blockchains
+
+This test case demonstrates how the Gateway can act as a middleware to support READ and WRITE operations on 2 EVM-based blockchains. It builds on the previous example (case 1) by introducing a more dynamic interaction flow, where contract state is read and immediately written to another blockchain. Contrarily to the previous case, this test case does not require a separate request to trigger the contract functions. Instead, it directly interacts with the EVM-based blockchain through the Gateway.
+
+For this, we will use the `OracleTestContract` contract, which is a simple contract that allows us to store and retrieve data. The contract has two functions:
+
+* **`setData(string memory data)`** – Stores data on-chain and associates it with a `bytes32` ID.
+* **`getData(bytes32 id)`** – Retrieves data from the contract by its ID.
+
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for in this case:
+
+- **Terminal 1:** Run the Gateway (Docker Compose)
+- **Terminal 2:** Start Hardhat EVM Blockchain 1 (port 8545)
+- **Terminal 3:** Start Hardhat EVM Blockchain 2 (port 8546)
+- **Terminal 4:** Deploy the OracleTestContract smart contract to both blockchains
+- **Terminal 5:** Run the Oracle interaction script (read/write via Gateway)
+
+This pattern is similar in other Oracle cases:
+- **Gateway terminal** (usually Terminal 1): Always run the Gateway via Docker Compose
+- **EVM/Hardhat terminals** (usually Terminals 2, 3): Start one or more local blockchains
+- **Deployment/Script terminals** (Terminals 4+): Deploy contracts and run interaction scripts
+
+Refer to each case's README for the exact mapping and steps.
+
+## Setup Instructions
+
+### 1. Start the Gateway (Docker)
+
+In terminal 1, from this directory:
+
+```bash
+docker compose up
+```
+
+This will start the Gateway with the corresponding configuration file located in `./config/config-oracle-2-evm-requests.json`.
+
+
+
+### 2. Start the Hardhat EVM Blockchains
+
+In terminal 2, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8545
+```
+
+In terminal 3, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8546
+```
+
+> ⚠️ Make sure to use `--hostname 0.0.0.0` on both cases so that the Gateway (inside Docker) can access the local Hardhat node.
+
+
+
+### 3. Deploy the Smart Contract
+
+In terminal 4, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat ignition deploy ./ignition/modules/OracleTestContract.js --network hardhat1
+cd ../../../EVM && npx hardhat ignition deploy ./ignition/modules/OracleTestContract.js --network hardhat2
+```
+
+> This deploys the `OracleTestContract` to the running Hardhat networks (`hardhat1` and `hardhat2` should be configured in `hardhat.config.js` to point to `http://0.0.0.0:8545` and `http://0.0.0.0:8546` respectively).
+
+
+
+### 4. Run the Oracle Interaction Script
+
+In terminal 5, from this directory (`gateway/oracle/case_2`):
+
+```bash
+python3 oracle-execute-auto-read-and-write.py
+```
+
+> This script sends POST requests to the Gateway to trigger contract `setData` and `getData` functions via `/oracle/execute`.
+
+---
+
+## Result
+
+Check the logs in terminal 5 where you executed the `oracle-execute-auto-read-and-write.py` script. You should see the following:
+1. The response from the Gateway confirming the read and write task.
+2. The response from the Gateway confirming the read result from the second EVM-based blockchain (i.e., to where the data was written to), returning the data that was set in the first EVM-based blockchain in the form:
+
+```json
+...
+{'output': 'DATA WRITTEN TO THE BLOCKCHAIN'}
+...
+```
+
+Also check the logs in terminals 2 and 3 where you started the Hardhat nodes. You should see logs confirming the read operation and the transaction (write) to the second EVM-based blockchain.
+
+
+Finally, you can access the `./satp-hermes-gateway/logs/` directory (relative to this case folder) to see the logs generated by the Gateway. The logs will contain detailed information about the requests and responses, including any errors or warnings that may have occurred during the process.
+
+
+========== FILE: cacti-demos/gateway/oracle/case_3/README.md ==========
+# Case 3: Registering a Polling Task to Periodically READ from EVM-based Blockchain
+
+This test case showcases how the **Gateway** can be used to register a **polling task** that automatically reads data from a smart contract at a fixed interval — in this case, **every 5 seconds**. This feature enables continuous monitoring of blockchain state without requiring repeated manual requests.
+
+For this, we will use the `OracleTestContract` contract, which is a simple contract that allows us to store and retrieve data. The contract has two functions:
+
+* **`setData(string memory data)`** – Stores data on-chain and associates it with a `bytes32` ID.
+* **`getData(bytes32 id)`** – Retrieves data from the contract by its ID.
+
+---
+
+## Flow Summary
+
+1. Register a **polling task** via the Gateway that attempts to read from the contract.
+2. Initially observe **failed** `getData` calls (because no data is stored yet).
+3. Trigger a **write** using `setData` to update the contract.
+4. See the polling task begin to **succeed** on each interval.
+5. Check the status of the task, including historical output.
+6. Finally, unregister the task to stop polling.
+
+---
+
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for in this case:
+
+- **Terminal 1:** Run the Gateway (Docker Compose)
+- **Terminal 2:** Start Hardhat EVM Blockchain (port 8545)
+- **Terminal 3:** Deploy the OracleTestContract smart contract
+- **Terminal 4:** Register the polling task via Gateway
+- **Terminal 5:** Trigger a write to the contract
+- **Terminal 6:** Check polling task status
+- **Terminal 7:** Unregister the polling task
+
+This pattern is similar in other Oracle cases:
+- **Gateway terminal** (usually Terminal 1): Always run the Gateway via Docker Compose
+- **EVM/Hardhat terminal(s)** (usually Terminal 2, sometimes 2 and 3): Start one or more local blockchains
+- **Deployment/Script terminal(s)** (Terminals 3+): Deploy contracts and run interaction scripts
+
+Refer to each case's README for the exact mapping and steps.
+
+## Setup Instructions
+
+### 1. Start the Gateway (Docker)
+
+In terminal 1, from this directory:
+
+```bash
+docker compose up
+```
+
+This will start the Gateway with the corresponding configuration file located in `./config/config-oracle-1-evm-requests.json`.
+
+---
+
+### 2. Start the Hardhat EVM Blockchain
+
+
+
+In terminal 2, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8545
+```
+
+> ⚠️ Make sure to use `--hostname 0.0.0.0` so that the Gateway (inside Docker) can access the local Hardhat node.
+
+---
+
+
+### 3. Deploy the Smart Contract
+
+
+In terminal 3, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat ignition deploy ./ignition/modules/OracleTestContract.js --network hardhat1
+```
+
+> This deploys the `OracleTestContract` to the running Hardhat network (`hardhat1` should be configured in `hardhat.config.js` to point to `http://0.0.0.0:8545`).
+
+---
+
+### 4. Register the Polling Task
+
+In terminal 4, from this directory:
+
+```bash
+python3 oracle-evm-register-poller.py
+```
+
+> This script registers a polling task that reads from `getData` every 5 seconds via the Gateway's `/oracle/register` endpoint. You should see:
+
+* Status: `ACTIVE`
+* Task ID: `<TASK_ID>` (save this ID because it will be used in later steps)
+
+---
+
+### 5. Observe Failing Reads (Expected)
+
+Check terminal 2 (Hardhat logs). You should see repeated failed `getData` calls due to the fact that no data is yet stored in the contract.
+
+---
+
+### 6. Trigger a Write to the Contract
+
+In terminal 5, run:
+
+```bash
+python3 oracle-evm-execute-update.py
+```
+
+> This sends a request to the Gateway to invoke `setData`, storing new data in the contract.
+
+---
+
+### 7. Observe Successful Reads
+
+Now return to terminal 2. The previously failing `getData` calls should start succeeding every 5 seconds, reflecting the new contract state.
+
+---
+
+### 8. Get Task Status
+
+In terminal 6, from this directory:
+
+```bash
+python3 oracle-evm-check-status.py <TASK_ID>
+```
+
+> This queries the Gateway's `/oracle/status` endpoint to inspect the current polling task. You should see:
+
+* Status: `ACTIVE`
+* Output history from each execution
+
+---
+
+### 9. Unregister the Task
+
+In terminal 7:
+
+```bash
+python3 oracle-evm-unregister.py <TASK_ID>
+```
+
+> This stops the polling task by calling the `/oracle/unregister` endpoint.
+
+---
+
+### Final Check: Task Status
+
+Re-run the status script:
+
+```bash
+python3 oracle-evm-check-status.py <TASK_ID>
+```
+
+You should now see:
+
+* Status: `INACTIVE`
+* Historical outputs available in the `outputs` field
+
+---
+
+## ✅ Summary
+
+This case demonstrates the Gateway’s polling capability to monitor blockchain state at regular intervals, enabling near-real-time integration with smart contracts. This is especially useful for automation, data feeds, and triggering external events when on-chain state changes. Note that the use of different `taskType` values (e.g., `READ`, `UPDATE`, `READ_AND_UPDATE`) can be used to customize the behavior of the polling task (e.g., every 5 seconds read data from the source chain contract and write it to the destination chain contract).
+
+
+Finally, you can access the `./satp-hermes-gateway/logs/` directory (relative to this case folder) to see the logs generated by the Gateway. The logs will contain detailed information about the requests and responses, including any errors or warnings that may have occurred during the process.
+
+
+========== FILE: cacti-demos/gateway/oracle/case_4/README.md ==========
+# Case 4: Cross-Chain EVENT\_LISTENING with READ\_AND\_UPDATE Tasks
+
+This test case illustrates how the **Gateway** can register a **READ\_AND\_UPDATE** task using **EVENT\_LISTENING mode** across two **EVM-based blockchains**. Instead of polling periodically, the Gateway listens for a specific **event emitted** by a smart contract on the **source blockchain**, and then triggers a **write operation** on a **destination blockchain** using filtered parameters from the event.
+
+For this, we will use the `OracleTestContract` contract, which is a simple contract that allows us to store and retrieve data. The contract has two functions:
+
+* **`setData(string memory data)`** – Stores data on-chain and associates it with a `bytes32` ID. The method emits an `UpdatedData` event with the stored data.
+* **`getData(bytes32 id)`** – Retrieves data from the contract by its ID.
+
+---
+
+## Flow Summary
+
+1. Register a **READ\_AND\_UPDATE task** with `EVENT_LISTENING` mode.
+2. Observe an `eth_subscribe` request in the logs of Blockchain 1 (Terminal 2).
+3. Trigger `setData(...)` on the contract deployed on Blockchain 1.
+4. The Gateway captures the event and extracts the `data` field via `filter_params`.
+5. It writes this data to the contract deployed on **Blockchain 2**.
+6. Check the task status to inspect the `operations` array and verify the update.
+7. Unregister the task and observe `eth_unsubscribe` in Terminal 2.
+
+---
+
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for in this case:
+
+- **Terminal 1:** Run the Gateway (Docker Compose)
+- **Terminal 2:** Start Hardhat EVM Blockchain 1 (port 8545)
+- **Terminal 3:** Start Hardhat EVM Blockchain 2 (port 8546)
+- **Terminal 4:** Deploy the OracleTestContract smart contract to both blockchains
+- **Terminal 5:** Register event listening task and trigger contract events
+- **Terminal 8:** Unregister the event listening task
+
+This pattern is similar in other Oracle cases:
+- **Gateway terminal** (usually Terminal 1): Always run the Gateway via Docker Compose
+- **EVM/Hardhat terminals** (usually Terminals 2, 3): Start one or more local blockchains
+- **Deployment/Script terminals** (Terminals 4+): Deploy contracts and run interaction scripts
+
+Refer to each case's README for the exact mapping and steps.
+
+## Setup Instructions
+
+### 1. Start the Gateway (Docker)
+
+In Terminal 1, from this directory:
+
+```bash
+docker compose up
+```
+
+This will start the Gateway with the corresponding configuration file located in `./config/config-oracle-1-evm-requests.json`.
+
+---
+
+
+### 2. Start the Hardhat EVM Blockchains
+
+
+In terminal 2, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8545
+```
+
+In terminal 3, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat node --hostname 0.0.0.0 --port 8546
+```
+
+> ⚠️ Make sure to use `--hostname 0.0.0.0` on both cases so that the Gateway (inside Docker) can access the local Hardhat node.
+
+
+### 3. Deploy the Smart Contract
+
+
+In terminal 4, from this directory, run:
+
+```bash
+cd ../../../EVM && npx hardhat ignition deploy ./ignition/modules/OracleTestContract.js --network hardhat1
+cd ../../../EVM && npx hardhat ignition deploy ./ignition/modules/OracleTestContract.js --network hardhat2
+```
+
+> This deploys the `OracleTestContract` to the running Hardhat networks (`hardhat1` and `hardhat2` should be configured in `hardhat.config.js` to point to `http://0.0.0.0:8545` and `http://0.0.0.0:8546` respectively).
+
+---
+
+### 4. Register the Event Listening Task
+
+In Terminal 5:
+
+```bash
+python3 oracle-evm-register-listener.py
+```
+
+> This sends a `POST /oracle/register` request to start listening for the `UpdatedData` event on Blockchain 1, and write filtered values to Blockchain 2.
+
+**Expected Result**:
+
+* In Terminal 2 (Blockchain 1), observe an `eth_subscribe` log line confirming the event subscription.
+* In Terminal 5, you should see a response indicating the task is registered successfully and currently `ACTIVE`. Also, note the `Task ID` for future reference.
+
+---
+
+### 5. Trigger the Event in Source Chain
+
+In Terminal 5:
+
+```bash
+python3 oracle-evm-execute-update.py
+```
+
+> This calls `setData(...)` on Blockchain 1, which emits the `UpdatedData` event.
+
+**Expected Result**:
+
+* In **Terminal 2 (Blockchain 1)**, see the `setData` transaction.
+* In **Terminal 3 (Blockchain 2)**, observe the write operation triggered by the Gateway.
+
+---
+
+### 6. Check Task Status and Operations
+
+In Terminal 5:
+
+```bash
+python3 oracle-evm-check-status.py <TASK_ID>
+```
+
+**Expected Output**:
+
+* Status: `ACTIVE`
+* The `operations` array should include the triggered `setData` operation on Blockchain 2.
+
+---
+
+### 7. Unregister the Task
+
+In Terminal 8:
+
+```bash
+python3 oracle-evm-unregister.py <TASK_ID>
+```
+
+**Expected Result**:
+
+* In **Terminal 2 (Blockchain 1)**, observe an `eth_unsubscribe` log, confirming the removal of the event listener.
+
+---
+
+### 8. Check Task Status and Operations
+
+In Terminal 5:
+
+```bash
+python3 oracle-evm-check-status.py <TASK_ID>
+```
+
+**Expected Result**:
+
+* Check the task status again. It should now be `INACTIVE`.
+
+---
+
+## Summary
+
+This test demonstrates reactive, event-driven orchestration across blockchains using the Gateway's **EVENT\_LISTENING** capability. It shows how smart contract events on one chain can automatically trigger state changes on another — a crucial pattern for cross-chain automation, bridges, or off-chain workflows.
+
+
+Finally, you can access the `./satp-hermes-gateway/logs/` directory (relative to this case folder) to see the logs generated by the Gateway. The logs will contain detailed information about the requests and responses, including any errors or warnings that may have occurred during the process.
+
+
+========== FILE: cacti-demos/gateway/oracle/case_5/README.md ==========
+# Fabric Oracle Execute: READ and WRITE Operations on Hyperledger Fabric
+
+This example demonstrates how to use the SATP Hermes Gateway as middleware to perform immediate READ and WRITE operations on Hyperledger Fabric. The test interacts with the `asset-transfer-basic` chaincode through the Gateway's `/oracle/execute` endpoint.
+
+For this case, we use the standard **`asset-transfer-basic`** chaincode deployed on Fabric, which provides functions for managing assets:
+
+* **`InitLedger()`** – Initializes the ledger with sample assets
+* **`CreateAsset(id, color, size, owner, value)`** – Creates a new asset on the ledger
+* **`ReadAsset(id)`** – Retrieves an asset by its ID
+* **`UpdateAsset(id, color, size, owner, value)`** – Updates an existing asset
+* **`GetAllAssets()`** – Retrieves all assets from the ledger
+* **`TransferAsset(id, newOwner)`** – Transfers asset ownership
+* **`DeleteAsset(id)`** – Removes an asset from the ledger
+
+## Requirements
+
+To simulate a Hyperledger Fabric network and run this example, ensure you have cloned the [Hyperledger Fabric Samples repository](https://github.com/hyperledger/fabric-samples).
+
+```bash
+git clone https://github.com/hyperledger/fabric-samples.git
+cd fabric-samples
+```
+
+Then, install the Fabric binaries and Docker images by running:
+
+```bash
+curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh && chmod +x install-fabric.sh
+./install-fabric.sh d s b
+```
+
+This will download the necessary Fabric binaries and Docker images.
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for:
+
+- **Terminal 1:** Start Hyperledger Fabric test network and Deploy the asset-transfer-basic chaincode
+- **Terminal 2:** Retrieve all keys and certificates from Fabric
+- **Terminal 3:** Run the Gateway (Docker Compose)
+- **Terminal 4:** Run the Oracle execute script
+
+## Setup Instructions
+
+### 1. Start Hyperledger Fabric Network
+
+In terminal 1, navigate to your Fabric samples directory and start the network:
+```bash
+cd fabric-samples/test-network
+./network.sh down  # Clean up any existing network if needed
+./network.sh up createChannel -c mychannel -ca
+```
+
+This creates a Fabric network with two organizations (Org1 and Org2) and a channel named `mychannel`.
+
+---
+
+### 2. Deploy the Asset-Transfer-Basic Chaincode
+
+In terminal 1, from the same directory:
+```bash
+./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-typescript -ccl typescript
+```
+
+This deploys the `asset-transfer-basic` chaincode to the `mychannel` channel with the contract name `basic`.
+
+---
+
+### 3. Copy Required Certificates and Keys to the Gateway Configuration file (config/gateway-fabric-config.json)
+
+#### Option 1: Script-based Retrieval
+
+In terminal 2, navigate to your Fabric samples directory:
+
+```bash
+cd utils
+chmod +x getcert.sh && ./getcert.sh > certs.txt
+```
+And a txt file will be created where you can just copy the keys to the placeholders in [`config/gateway-fabric-config.json`](config/gateway-fabric-config.json).
+
+#### Option 2: Manual Retrieval
+
+In terminal 2, navigate to your Fabric samples directory:
+
+Admin Certificate     -> userIdentity.credentials.certificate
+```bash
+cat organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/*.pem
+```
+
+Admin Private Key     -> userIdentity.credentials.privateKey
+```bash
+cat organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/*_sk
+```
+
+Peer0 Org1 CA Cert    -> connectionProfile.peers.peer0.org1.example.com.tlsCACerts.pem
+```bash
+cat organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+```
+
+CA Org1 Certificate   -> connectionProfile.certificateAuthorities.ca.org1.example.com.tlsCACerts.pem[0]
+```bash
+cat organizations/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem
+```
+
+Orderer CA Certificate -> connectionProfile.orderers.orderer.example.com.tlsCACerts.pem
+```bash
+cat organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+```
+
+---
+
+### 4. Start the Gateway (Docker)
+
+In terminal 3:
+```bash
+docker compose up
+```
+This will start the Gateway with the Fabric configuration file.
+
+```bash
+docker ps
+```
+And check if kubaya/cacti-satp-hermes-gateway is healthy, if it procceed
+
+---
+
+### 5. Run the Oracle Execute Script
+
+In terminal 4, from this directory:
+```bash
+python3 oracle-execute-fabric.py
+```
+
+This script sends POST requests to the Gateway to trigger chaincode functions via `/oracle/execute`.
+
+---
+
+### What It Does
+
+1. **Invalid Function** – Verifies that calling non-existent functions fails gracefully
+2. **Create Asset** – Creates a new asset and verifies success
+3. **Read Asset** – Reads the created asset and verifies data
+4. **Get All Assets** – Retrieves all assets and confirms the created asset is present
+5. **Update Asset** – Updates the asset and verifies the changes
+6. **Transfer Asset** – Transfers ownership and verifies the new owner
+7. **Delete Asset** – Deletes the asset and verifies removal
+
+
+
+========== FILE: cacti-demos/gateway/oracle/case_6/README.md ==========
+# Fabric Oracle Register: POLLING READ and UPDATE Operations on Hyperledger Fabric
+
+This README describes how to run the oracle polling tests that use the SATP Hermes Gateway as middleware to register, poll and unregister tasks against Hyperledger Fabric. The tests exercise the standard `asset-transfer-basic` chaincode through the Gateway plugin endpoints:
+
+- POST /api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/execute
+- POST /api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/register
+- POST /api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/unregister
+- GET  /api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/status
+
+The provided test script `oracle-execute-fabric.py` performs three polling scenarios:
+- polling_update_fabric: creates an asset, registers a POLLING UPDATE task that updates the asset every 5s, waits, then unregisters and asserts multiple successful UPDATE operations were executed.
+- polling_read_fabric: registers a POLLING READ task that calls `GetAllAssets` every 5s, waits, then unregisters and asserts multiple successful READ operations were executed.
+- polling_specific_read_fabric: creates a single asset, registers a POLLING READ task that calls `ReadAsset(<id>)` every 5s, waits, then unregisters and asserts the specific asset was read successfully multiple times.
+
+## Requirements
+
+To simulate a Hyperledger Fabric network and run this example, ensure you have cloned the [Hyperledger Fabric Samples repository](https://github.com/hyperledger/fabric-samples).
+
+```bash
+git clone https://github.com/hyperledger/fabric-samples.git
+cd fabric-samples
+```
+
+Then, install the Fabric binaries and Docker images by running:
+
+```bash
+curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh && chmod +x install-fabric.sh
+./install-fabric.sh d s b
+```
+
+This will download the necessary Fabric binaries and Docker images.
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for:
+
+- **Terminal 1:** Start Hyperledger Fabric test network and Deploy the asset-transfer-basic chaincode
+- **Terminal 2:** Retrieve all keys and certificates from Fabric
+- **Terminal 3:** Run the Gateway (Docker Compose)
+- **Terminal 4:** Run the Oracle execute script
+
+## Setup Instructions
+
+### 1. Start Hyperledger Fabric Network
+
+In terminal 1, navigate to your Fabric samples directory and start the network:
+```bash
+cd fabric-samples/test-network
+./network.sh down  # Clean up any existing network if needed
+./network.sh up createChannel -c mychannel -ca
+```
+
+This creates a Fabric network with two organizations (Org1 and Org2) and a channel named `mychannel`.
+
+---
+
+### 2. Deploy the Asset-Transfer-Basic Chaincode
+
+In terminal 1, from the same directory:
+```bash
+./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-typescript -ccl typescript
+```
+
+This deploys the `asset-transfer-basic` chaincode to the `mychannel` channel with the contract name `basic`.
+
+---
+
+### 3. Copy Required Certificates and Keys to the Gateway Configuration file (config/gateway-fabric-config.json)
+
+#### Option 1: Script-based Retrieval
+
+In terminal 2, navigate to your Fabric samples directory:
+
+```bash
+cd utils
+chmod +x getcert.sh && ./getcert.sh > certs.txt
+```
+And a txt file will be created where you can just copy the keys to the placeholders in [`config/gateway-fabric-config.json`](config/gateway-fabric-config.json).
+
+#### Option 2: Manual Retrieval
+
+In terminal 2, navigate to your Fabric samples directory:
+
+Admin Certificate     -> userIdentity.credentials.certificate
+```bash
+cat organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/*.pem
+```
+
+Admin Private Key     -> userIdentity.credentials.privateKey
+```bash
+cat organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/*_sk
+```
+
+Peer0 Org1 CA Cert    -> connectionProfile.peers.peer0.org1.example.com.tlsCACerts.pem
+```bash
+cat organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+```
+
+CA Org1 Certificate   -> connectionProfile.certificateAuthorities.ca.org1.example.com.tlsCACerts.pem[0]
+```bash
+cat organizations/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem
+```
+
+Orderer CA Certificate -> connectionProfile.orderers.orderer.example.com.tlsCACerts.pem
+```bash
+cat organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+```
+
+---
+
+### 4. Start the Gateway (Docker)
+
+In terminal 3:
+```bash
+docker compose up
+```
+This will start the Gateway with the Fabric configuration file.
+
+```bash
+docker ps
+```
+And check if kubaya/cacti-satp-hermes-gateway is healthy, if it proceed
+
+---
+
+### 5. Run the Oracle Polling Test Script
+
+In terminal 4 (this directory where `oracle-register-fabric.py` lives):
+```bash
+python3 oracle-register-fabric.py
+```
+
+What the script does (high level)
+- Uses the register endpoint to create assets for tests.
+- Registers POLLING tasks via the register endpoint:
+    - UPDATE task: updates an asset every 5s (pollingInterval=5000) and asserts between 3 and 5 operations (expecting ≥3 successes).
+    - READ task (all assets): calls `GetAllAssets` every 5s and asserts between 2 and 4 successful reads.
+    - READ task (specific asset): creates an asset then polls `ReadAsset(<id>)` every 5s and asserts multiple successful reads and that returned asset ID matches.
+- Unregisters tasks using the unregister endpoint and checks final status via the status endpoint. The script asserts expected task state (INACTIVE), type (READ/UPDATE), mode (POLLING), and operation counts.
+
+Endpoints used by the script
+- execute: POST http://localhost:4010/api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/execute
+- register: POST  http://localhost:4010/api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/register
+- unregister: POST http://localhost:4010/api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/unregister?taskID=<id>
+- status: GET http://localhost:4010/api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/status?taskID=<id>
+
+Notes and assertions
+- The script will exit with status 0 on success, 1 on assertion or runtime error.
+- The script expects the Gateway plugin to be reachable at localhost:4010 and configured with the Fabric credentials copied into the Gateway configuration.
+- Adjust timeouts or pollingInterval if running on slow hosts or CI environments.
+
+Troubleshooting
+- If register fails, check gateway logs and ensure the Fabric connection info in `config/gateway-fabric-config.json` is correct.
+- If operations are fewer than expected, increase wait times in the script or confirm gateway scheduling is working.
+
+This README matches the flow implemented in `oracle-register-fabric.py`. Run the Fabric network, start the gateway, then execute the script to validate polling register/read/update flows against the `asset-transfer-basic` chaincode.
+
+
+========== FILE: cacti-demos/gateway/oracle/case_7/README.md ==========
+# Fabric Oracle Event Listener: EVENT_LISTENING Operations on Hyperledger Fabric
+
+This README describes how to run the oracle event listening tests that use the SATP Hermes Gateway as middleware to register event listeners and automatically execute actions in response to Hyperledger Fabric events. The tests exercise the custom `Counter` chaincode through the Gateway plugin endpoints:
+
+- POST /api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/execute
+- POST /api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/register
+- POST /api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/unregister
+- GET  /api/v1/@hyperledger/cactus-plugin-satp-hermes/oracle/status
+
+## Test Scenario Overview
+
+The test demonstrates event-driven automation:
+
+1. **Verify Initial State**: Confirms that 'newKey' does not exist in the ledger
+2. **Register Event Listener**: Sets up a listener that monitors for 'WriteData' events and automatically calls `WriteDataNoEvent` when the event fires
+3. **Trigger Event**: Calls `WriteData` which stores data and emits a 'WriteData' event
+4. **Wait for Processing**: Allows time for the listener to catch the event and execute the action
+5. **Verify Listener Worked**: Reads 'newKey' to confirm the listener automatically wrote data
+6. **Cleanup**: Unregisters the event listener
+
+
+## Requirements
+
+To simulate a Hyperledger Fabric network and run this example, ensure you have cloned the [Hyperledger Fabric Samples repository](https://github.com/hyperledger/fabric-samples).
+
+```bash
+git clone https://github.com/hyperledger/fabric-samples.git
+cd fabric-samples
+```
+
+Then, install the Fabric binaries and Docker images by running:
+
+```bash
+curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh && chmod +x install-fabric.sh
+./install-fabric.sh d s b
+```
+
+This will download the necessary Fabric binaries and Docker images.
+
+## Terminal Overview
+
+Before starting, here is a summary of what each terminal will be used for:
+
+- **Terminal 1:** Start Hyperledger Fabric test network and Deploy the `Counter` chaincode
+- **Terminal 2:** Retrieve all keys and certificates from Fabric
+- **Terminal 3:** Run the Gateway (Docker Compose)
+- **Terminal 4:** Run the Oracle test scripts
+
+## Setup Instructions
+
+### 1. Start Hyperledger Fabric Network
+
+In terminal 1, navigate to your Fabric samples directory and start the network:
+```bash
+cd fabric-samples/test-network
+./network.sh down  # Clean up any existing network if needed
+./network.sh up createChannel -c mychannel -ca
+```
+
+This creates a Fabric network with two organizations (Org1 and Org2) and a channel named `mychannel`.
+
+---
+
+### 2. Deploy the Counter Chaincode
+
+In terminal 1, from the same directory:
+```bash
+./network.sh deployCC -ccn counter -ccp ../../fabric-contracts/counter-contract/chaincode-javascript/ -ccl javascript
+```
+
+This deploys the `counter` chaincode to the `mychannel` channel with the contract name `counter`.
+
+---
+
+### 3. Copy Required Certificates and Keys to the Gateway Configuration file (config/gateway-fabric-config.json)
+
+#### Option 1: Script-based Retrieval
+
+In terminal 2:
+
+```bash
+cd utils
+chmod +x getcert.sh && ./getcert.sh > certs.txt
+```
+And a txt file will be created where you can just copy the keys to the placeholders in [`config/gateway-fabric-config.json`](config/gateway-fabric-config.json).
+
+#### Option 2: Manual Retrieval
+
+In terminal 2, navigate to your Fabric samples directory:
+
+Admin Certificate     -> userIdentity.credentials.certificate
+```bash
+cat organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/*.pem
+```
+
+Admin Private Key     -> userIdentity.credentials.privateKey
+```bash
+cat organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/*_sk
+```
+
+Peer0 Org1 CA Cert    -> connectionProfile.peers.peer0.org1.example.com.tlsCACerts.pem
+```bash
+cat organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+```
+
+CA Org1 Certificate   -> connectionProfile.certificateAuthorities.ca.org1.example.com.tlsCACerts.pem[0]
+```bash
+cat organizations/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem
+```
+
+Orderer CA Certificate -> connectionProfile.orderers.orderer.example.com.tlsCACerts.pem
+```bash
+cat organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+```
+
+---
+
+### 4. Start the Gateway (Docker)
+
+In terminal 3:
+```bash
+docker compose up
+```
+This will start the Gateway with the Fabric configuration file in `config/gateway-fabric-config.json`.
+
+```bash
+docker ps
+```
+And check if `kubaya/cacti-satp-hermes-gateway` is healthy, if it proceed
+
+---
+
+### 5. Run the Oracle Event Listener Test
+
+In terminal 4, you can run the different scripts to perform the test scenario:
+
+**Step 1: Verify Initial State**
+```bash
+python3 oracle-evm-read-data.py newKey
+```
+Expected: Error message saying "there is no data stored in the ledger with key: newKey"  
+This is correct - the key doesn't exist yet!
+
+**Step 2: Register Event Listener**
+```bash
+python3 oracle-evm-register-listener.py
+```
+Save the `Task_ID` from the output, and check that the status is `ACTIVE`. The event listener is listening for 'WriteData' events, and will call `WriteDataNoEvent` when the event is detected with the data from the event.
+
+**Step 3: Trigger the Event**
+```bash
+python3 oracle-evm-write-data.py eventTestKey "data from event listener"
+```
+This calls WriteData which emits the 'WriteData' event.
+
+**Step 4: Wait for Processing**
+```bash
+sleep 10
+```
+Give the listener time to catch the event and execute WriteDataNoEvent.
+
+**Step 5: Check Task Status (Optional)**
+```bash
+python3 oracle-evm-check-status.py <TASK_ID>
+```
+Replace `TASK_ID` with the Task ID from Step 2.
+
+**Step 6: Verify the Listener Worked**
+```bash
+python3 oracle-evm-read-data.py newKey
+```
+Expected: Success! The data should be returned.  
+This proves the event listener caught the event and wrote the data!
+
+**Step 7: Cleanup**
+```bash
+python3 oracle-evm-unregister.py <TASK_ID>
+```
+Replace `<TASK_ID>` with the Task ID from Step 2, and check that the status is `INACTIVE`. The event listener has been unregistered, the test is complete.
+
+
+---
+
+## Cleanup
+
+To clean up after testing:
+
+```bash
+# Stop the gateway (Terminal 3)
+docker compose down
+
+# Stop the Fabric network (Terminal 1)
+cd fabric-samples/test-network
+./network.sh down
+
+# Optional: Remove Docker network
+docker network rm fabric_test
+```
+
+
+========== FILE: cacti-demos/gateway/extensions/carbon-credit/README.md ==========
+# Carbon Credit Extension (Toucan) — run carbon-credit-extension.py
+
+This file shows how to run the carbon-credit-extension.py test flow that buys and retires TCO2s using the Gateway. Before running the main script you must fund the test account with USDC using Hardhat impersonation.
+
+The main script performs these high-level actions:
+- Requests available TCO2s ordered by supply.
+- Selects 3 TCO2 tokens with at least 400 units (18 decimals) of liquidity in the NCT contract.
+- Performs a specific buy of 3 TCO2s (400 units each) paying with USDC and checks asset amounts (expected 360 units after fees).
+- Retires 200 units of each purchased TCO2 and verifies retirement certificates on-chain via the NFT contract.
+
+---
+
+## Flow Summary
+
+1. Start the Gateway and Polygon fork (if applicable) using Docker compose.
+2. Ensure the Gateway config (config/config.json) has the CARBON_CREDIT extension enabled
+3. Use fund-usdc-to-address.py to impersonate and fund the testing account with USDC.
+4. Run carbon-credit-extension.py — it will:
+    - call get-available-tco2s,
+    - choose three qualifying TCO2s,
+    - call specific_buy_request,
+    - call retire_request,
+    - verify on-chain retirement certificate amounts.
+5. Inspect printed output and any Gateway / node logs for transaction hashes and verification messages.
+
+---
+
+## Setup Instructions
+
+### 1. Start the Gateway (Docker) — if applicable
+
+If your test requires the local Gateway, from this directory:
+
+```bash
+docker compose up
+```
+
+This will start 2 different services.
+
+1. The Gateway using your environment config. There are **2 important files/directories**:
+- [config/config.json](config/config.json) — contains the configuration used to start the Gateway, including RPC URLs, and key pairs.
+  - The extensions section must include the CARBON_CREDIT extension, for the endpoints to be available.
+- [satp-hermes-gateway/logs/](satp-hermes-gateway/logs/) — contains Gateway logs, useful for debugging requests/responses.
+
+2. A Polygon fork using Hardhat (if you used the provided docker-compose.yaml). This is optional if you have your own Hardhat node running.
+
+---
+
+### 2. Fund the testing account with USDC (impersonation)
+
+Before running the carbon-credit script you must fund the USER/test address with USDC on the fork. Use the provided script:
+
+```bash
+python3 fund-usdc-to-address.py
+```
+
+**Expected Result**:
+- The script impersonates a rich USDC holder (via Hardhat) and transfers sufficient USDC to the test address.
+- You should see logs confirming the USDC transfer and the recipient address balance.
+
+---
+
+### 3. Run the carbon credit extension script
+
+From this directory, run:
+
+```bash
+python3 carbon-credit-extension.py
+```
+
+**Expected Result**:
+
+What to expect (key printed lines from the script):
+- "Requesting TCO2s ordered by supply..."
+- Logs showing selected TCO2 addresses and projectId values.
+- "Performing specific buy..." and details including txHashSwap, buyTxHash, assetAmounts.
+- "Performing retire..." followed by certificate creation messages, e.g. "Retirement certificate <id> created."
+- "Verifying retirement certificate amounts on-chain..." with on-chain retired amounts and a final success message.
+
+The script will raise exceptions and exit if:
+- No TCO2s are returned.
+- Fewer than 3 TCO2s have sufficient NCT liquidity.
+- specificBuy response lacks expected fields or amounts.
+- retire response lacks expected tx hashes or certificate ids.
+- On-chain retired amounts do not match expected values (200 * 1e18).
+
+---
+
+## Troubleshooting & Logs
+
+- Check Hardhat terminal for impersonation and transaction logs.
+- If the script fails when querying balances, ensure the provider URL is correct and the token addresses are in checksum format.
+- Gateway logs (if used) are in `./satp-hermes-gateway/logs/` relative to this directory for request/response details.
+
+
+========== FILE: whitepaper/whitepaper.md ==========
+
+
+
+<img src="./2023_logo_hyperledger.svg" width="700" >
+
+---
+
+# Hyperledger Cacti<br>Whitepaper <!-- omit in toc -->
+
+## Version 2.0<!-- omit in toc -->
+
+<img src="./pontus-wellgraf-agCzLSG4_gE-unsplash-cropped-compressed.jpg" width="700">
+Photo by Pontus Wellgraf on Unsplash
+
+---
+
+> # ⚠️
+> # 👷🚧🏗️
+>
+>
+> The whitepaper is currently under construction.
+>
+> Please see the related item in the issue tracker for further details & to join the discussion/work:
+> https://github.com/hyperledger-cacti/cacti/issues/2691
+>
+> To access the old version of the whitepaper, you can use
+> an older commit of the `main` branch, such as this one:
+> https://github.com/hyperledger-cacti/cacti/blob/7bb39576080592919bea0ac89646b32105e1748e/whitepaper/whitepaper.md
